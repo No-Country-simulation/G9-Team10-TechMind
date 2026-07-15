@@ -1,52 +1,64 @@
 # 🗺️ Roadmap: Equipo de Datos (TechMind)
 
-Este documento define la ruta de trabajo exclusiva para nuestro sub-equipo de Data. Aquí detallamos cuál es nuestro objetivo, qué pasos seguiremos para lograrlo y, lo más importante, **qué le vamos a entregar al equipo de Desarrollo (Backend/Frontend) como producto final**.
+Este documento define la ruta de trabajo exclusiva para nuestro equipo de Data. Aquí detallamos nuestro objetivo, el flujo de trabajo visual, qué pasos seguiremos para lograrlo y **qué le vamos a entregar al equipo de Desarrollo (Backend)**.
 
 ---
 
-## 🎯 Nuestro Producto Final (El Entregable)
-Nosotros no hacemos la interfaz gráfica ni la gestión de base de datos de usuarios. Nuestro trabajo consiste en crear el "Cerebro" de la aplicación. 
+## 📊 Diagrama General del Flujo de Datos
+Este es el esquema interno de nuestra API de Python y cómo se conectará con el resto del proyecto.
 
-El objetivo final es entregarle al Backend un **Pipeline (Motor) empaquetado** en una función de Python sencilla. El Backend solo debe preocuparse por pasarnos un texto, y nosotros le devolvemos la magia.
+```mermaid
+graph TD
+    subgraph Fase 0: Inicialización
+        A[Dataset Crudo 1000 docs] -->|Limpieza - Colab| B[Dataset Limpio]
+        B -->|Vectorización| C[(Memoria de Vectores TF-IDF)]
+    end
 
-**Ejemplo de lo que el Backend espera de nuestro equipo:**
-```python
-# El backend nos pasará algo como esto (recibido desde el frontend):
-texto_crudo = "<p>Tutorial de Python: <code>print('Hola')</code></p>"
-
-# Nuestro motor procesará el texto y debe devolverles un JSON como este:
-resultado = motor_techmind.procesar(texto_crudo)
-/*
-{
-  "categoria_principal": "Tutorial de Programación",
-  "lenguaje_detectado": "Python",
-  "tags": ["tutorial", "python", "hola mundo"],
-  "resumen_llm": "Breve tutorial introductorio sobre impresión en Python.",
-  "documentos_similares": [id_45, id_89]
-}
-*/
+    subgraph API Python Nuestro Entregable
+        D[Petición desde Spring Boot] --> E{¿Qué endpoint llamó?}
+        
+        E -->|Endpoint: /analizar_texto| F[Modelo Clásico + LLM Gemini]
+        F --> G[Extrae: Categoría, Probabilidad y Tags]
+        G --> H[Retorna JSON a Spring Boot]
+        
+        E -->|Endpoint: /buscar_parecido| I[Convertir texto nuevo a Vector]
+        I --> J[Comparar vs Memoria Matemática]
+        J --> K[Similitud del Coseno Top 3]
+        K --> L[Retorna IDs a Spring Boot]
+    end
 ```
 
 ---
 
-## 🚀 Fases del Proyecto (Data Team)
+## 🎯 Nuestro Producto Final (El Entregable)
+Nosotros construimos el "Cerebro". El objetivo final es entregarle al Backend una **API en Python (FastAPI/Flask)** con dos funciones claras para que ellos consuman:
+
+1. **`/analizar_texto`:** El Backend nos manda un texto nuevo, y nosotros le devolvemos un JSON con la clasificación y palabras clave para que él lo guarde en su base de datos MySQL.
+2. **`/buscar_parecido`:** El Backend nos manda un texto, y nosotros usando cálculos matemáticos le devolvemos los IDs de los 3 documentos pre-cargados más relacionados semánticamente.
+
+---
+
+## 🚀 Fases del Proyecto y Objetivos
 
 ### Fase 1: Ingesta de Datos (Completada ✅)
-- **Objetivo:** Recolectar datos heterogéneos y ruidosos (GitHub, arXiv, tutoriales, HTML) para simular el mundo real.
+- **Responsable:** Maxi
+- **¿Qué buscamos?** Evitar el "Problema del Arranque en Frío". Recolectamos datos heterogéneos (GitHub, arXiv, tutoriales, ruido web) para que, el día de la presentación, nuestra base de datos arranque con 1000 documentos pre-cargados listos para ser recomendados.
 - **Salida:** `dataset_techmind_raw.csv`.
 
 ### Fase 2: Limpieza de Datos (Data Wrangling)
-- **Objetivo:** Escribir algoritmos (usando Pandas, Regex, BeautifulSoup) que tomen el CSV crudo y normalicen los textos. Hay que remover ruido web pero preservar el contexto técnico.
+- **Responsables:** Nairobi / Rodrigo
+- **¿Qué buscamos?** Trabajar en Google Colab para escribir algoritmos (Pandas, Regex) que transformen el CSV ruidoso en texto puro. Necesitamos limpiar HTML roto, enmascarar código fuente y unificar formatos para no confundir a los modelos.
 - **Salida:** `dataset_techmind_clean.csv`.
 
-### Fase 3: Integración del LLM (Clasificación Inteligente)
-- **Objetivo:** Ya que acordamos usar un LLM, no necesitamos entrenar redes neuronales desde cero para NLP clásico. Usaremos **Prompt Engineering** y llamadas a APIs (ej. Gemini/OpenAI) para extraer las entidades clave (Tags, Categoría, Resumen) de los textos limpios.
-- **Reto:** Optimizar los Prompts para que el LLM siempre responda en formato JSON predecible.
+### Fase 3: Clasificación e Integración del LLM
+- **¿Qué buscamos?** Entender de qué trata el texto entrante. 
+  - Usaremos un modelo de Machine Learning clásico y veloz (ej. Random Forest o Naive Bayes) para la clasificación de categoría.
+  - Nos conectaremos a una API de LLM gratuita (ej. Gemini) usando *Prompt Engineering* exclusivo para extraer "palabras clave", en lugar de intentar entrenar un LLM nosotros mismos.
 
-### Fase 4: Motor de Similitud (Clustering y Recomendación)
-- **Objetivo:** Para cumplir con la funcionalidad de *"organización y recomendación"*, necesitamos que el sistema sepa qué textos se parecen entre sí.
-- **Cómo hacerlo:** Convertiremos los textos a vectores matemáticos (Embeddings del LLM o métodos rápidos como TF-IDF) y calcularemos la Distancia del Coseno.
+### Fase 4: Búsqueda Semántica (Sistema de Recomendación)
+- **¿Qué buscamos?** Cumplir con el requisito del Hackathon de "Encontrar contenidos relacionados".
+- **¿Cómo?** Vectorizaremos los textos y aplicaremos Similitud del Coseno. Cuando entre un texto nuevo, nuestra matemática comparará ese vector contra nuestra "Fase 0" y encontrará los documentos que apuntan en la misma dirección semántica (incluso si no usan las mismas palabras exactas).
 
 ### Fase 5: Empaquetado (El "Hand-off" al Backend)
-- **Objetivo:** Encapsular las Fases 2, 3 y 4 en un solo archivo de Python (ej. `ai_pipeline.py`).
-- **Éxito:** El equipo de Backend lo importa en su servidor (FastAPI/Django/Flask) sin necesidad de entender cómo funcionan los vectores o el LLM por debajo.
+- **¿Qué buscamos?** Encapsular todo el código de las fases anteriores en una API de Python estructurada.
+- **Éxito:** El equipo de Backend puede llamar a nuestras dos URLs desde Java sin tener que entender de algoritmos o matemáticas, y el Frontend tiene datos confiables para graficar.
