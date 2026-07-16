@@ -24,11 +24,14 @@ async def analizar_texto(entrada: TextoInput):
             trace_id=trace_id
         )
         
-    # TODO: Conectar con ml_service y gemini_service reales cuando Rodrigo termine
+    # Llamada real a Gemini
+    from services.gemini_service import extraer_metadata
+    metadata_gemini = extraer_metadata(entrada.texto)
+    
     return AnalisisResponse(
-        categoria="Desconocida",
+        categoria="Desconocida", # Esto lo dará el ML de Rodrigo luego
         probabilidad=0.0,
-        dificultad="Desconocida",
-        informacion_adicional=[],
+        dificultad=metadata_gemini.get("dificultad", "Desconocida"),
+        informacion_adicional=metadata_gemini.get("tags", []),
         trace_id=trace_id
     )
