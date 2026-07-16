@@ -1,64 +1,107 @@
-# 🗺️ Roadmap: Equipo de Datos (TechMind)
+# 🗺️ TechMind: Área de Datos (README + Roadmap)
 
-Este documento define la ruta de trabajo exclusiva para nuestro equipo de Data. Aquí detallamos nuestro objetivo, el flujo de trabajo visual, qué pasos seguiremos para lograrlo y **qué le vamos a entregar al equipo de Desarrollo (Backend)**.
+Bienvenidos al repositorio central del equipo de Data. Este documento sirve como guía, documentación y hoja de ruta para entender cómo transformamos texto crudo en un "Cerebro" de Inteligencia Artificial que alimentará a toda la aplicación.
+
+Si eres de Backend (Juan) o Frontend (Alexis), este es el lugar para entender qué hacemos y cómo conectarte a nosotros.
 
 ---
 
-## 📊 Diagrama General del Flujo de Datos
-Este es el esquema interno de nuestra API de Python y cómo se conectará con el resto del proyecto.
+## 👥 Nuestro Equipo (Célula de Datos)
+
+Para trabajar de forma ágil y profesional, dividimos la responsabilidad de la ciencia de datos en fases especializadas:
+
+- **Nairo:** Especialista en Data Wrangling y Limpieza de Datos. (Encargada de sanitizar el texto y dejar los datos legibles para la IA).
+- **Rodrigo:** Especialista en Machine Learning y Matemáticas. (Encargado de los modelos TF-IDF, Naive Bayes y Similitud del Coseno).
+- **Maxi:** Arquitectura de Datos e Integración de IA. (Encargado de la recolección inicial, conexión con LLMs y despliegue de la API final).
+
+---
+
+## 📊 Diagrama General del Flujo de Trabajo
+
+Este diagrama explica de forma sencilla cómo viajan los datos desde la recolección hasta llegar al servidor de Backend, para que cualquier miembro del equipo lo pueda entender.
 
 ```mermaid
 graph TD
-    subgraph Fase 0: Inicialización
-        A[Dataset Crudo 1000 docs] -->|Limpieza - Colab| B[Dataset Limpio]
-        B -->|Vectorización| C[(Memoria de Vectores TF-IDF)]
+    subgraph Fase 0: Preparación del Cerebro (Trabajo Interno)
+        A[Datos Crudos - 1000 docs<br/>Responsable: Maxi] -->|Regex & Filtrado| B[Datos Limpios<br/>Responsable: Nairo]
+        B -->|Entrenamiento ML| C[(Modelo Matemático .joblib<br/>Responsable: Rodrigo)]
     end
 
-    subgraph API Python Nuestro Entregable
-        D[Petición desde Spring Boot] --> E{¿Qué endpoint llamó?}
+    subgraph Fase de Producción: La Micro-API (Nuestro Entregable)
+        D[Petición desde Spring Boot<br/>Responsable: Juan] --> E{API FastAPI<br/>Responsable: Maxi}
         
-        E -->|Endpoint: /analizar_texto| F[Modelo Clásico + LLM Gemini]
-        F --> G[Extrae: Categoría, Probabilidad y Tags]
-        G --> H[Retorna JSON a Spring Boot]
+        E -->|1. /analizar_texto| F[Modelo Clásico + LLM Gemini]
+        F --> G[JSON: Categoría, Dificultad, Keywords]
         
-        E -->|Endpoint: /buscar_parecido| I[Convertir texto nuevo a Vector]
-        I --> J[Comparar vs Memoria Matemática]
-        J --> K[Similitud del Coseno Top 3]
-        K --> L[Retorna IDs a Spring Boot]
+        E -->|2. /buscar_parecido| H[Matemática: Similitud del Coseno]
+        H --> I[JSON: Top 3 IDs Relacionados]
     end
 ```
 
 ---
 
-## 🎯 Nuestro Producto Final (El Entregable)
-Nosotros construimos el "Cerebro". El objetivo final es entregarle al Backend una **API en Python (FastAPI/Flask)** con dos funciones claras para que ellos consuman:
+## 🚀 Fases del Proyecto y Estado Actual
 
-1. **`/analizar_texto`:** El Backend nos manda un texto nuevo, y nosotros le devolvemos un JSON con la clasificación y palabras clave para que él lo guarde en su base de datos MySQL.
-2. **`/buscar_parecido`:** El Backend nos manda un texto, y nosotros usando cálculos matemáticos le devolvemos los IDs de los 3 documentos pre-cargados más relacionados semánticamente.
+### Fase 1: Ingesta de Datos (✅ Completada por Maxi)
+- **Objetivo:** Evitar el "arranque en frío" del proyecto recolectando 1000 documentos técnicos (GitHub, arXiv, etc.).
+- **Resultado:** Archivo `dataset_techmind_raw.csv`.
+
+### Fase 2: Limpieza de Datos / Data Wrangling (✅ Completada por Nairo)
+- **Objetivo:** Transformar el texto ruidoso limpiando etiquetas HTML, URLs y unificando formatos para que la máquina no se confunda. 
+- **Resultado:** Notebook `Datos_limpios.ipynb` que genera texto puro para el modelo.
+
+### Fase 3: Clasificación e Integración del LLM (⏳ En Progreso por Rodrigo y Maxi)
+- **Objetivo (Rodrigo):** Entrenar un modelo de Machine Learning clásico (TF-IDF + Regresión) con los datos limpios de Nairo para predecir la **Categoría** del texto entrante.
+- **Objetivo (Maxi):** Integrar la API de Gemini para leer el texto y extraer el nivel de **Dificultad** y **Palabras Clave (Tags)** humanos.
+
+### Fase 4: Búsqueda Semántica / Recomendación (⏳ En Progreso por Rodrigo)
+- **Objetivo:** Vectorizar los textos y usar *Similitud del Coseno*. Cuando entre un texto nuevo, la matemática comparará ese vector contra nuestra "Fase 0" y encontrará los 3 documentos que apuntan en la misma dirección semántica.
+
+### Fase 5: API Final Modular (⏳ En Progreso por Maxi)
+- **Objetivo:** Encapsular los modelos de Rodrigo y Gemini dentro de una API web rápida (FastAPI). 
+- **Decisión de Arquitectura (Importante):** No exponer nuestra API a internet público. Será una "Micro-API" de uso interno. El Backend (Spring Boot de Juan) será el único que le hablará a nuestra API internamente para obtener los cálculos.
+- **Estado Actual:** Estructura de código modular ya construida (`routers`, `services`). Actualmente devolviendo *Mock Data* (datos de prueba estáticos) para desbloquear a los equipos de Backend y Frontend.
 
 ---
 
-## 🚀 Fases del Proyecto y Objetivos
+## 🔌 El Contrato de API (Para el equipo de Backend)
 
-### Fase 1: Ingesta de Datos (Completada ✅)
-- **Responsable:** Maxi
-- **¿Qué buscamos?** Evitar el "Problema del Arranque en Frío". Recolectamos datos heterogéneos (GitHub, arXiv, tutoriales, ruido web) para que, el día de la presentación, nuestra base de datos arranque con 1000 documentos pre-cargados listos para ser recomendados.
-- **Salida:** `dataset_techmind_raw.csv`.
+Juan, así es exactamente como debes conectarte a nosotros desde tu código Java:
 
-### Fase 2: Limpieza de Datos (Data Wrangling)
-- **Responsables:** Nairobi / Rodrigo
-- **¿Qué buscamos?** Trabajar en Google Colab para escribir algoritmos (Pandas, Regex) que transformen el CSV ruidoso en texto puro. Necesitamos limpiar HTML roto, enmascarar código fuente y unificar formatos para no confundir a los modelos.
-- **Salida:** `dataset_techmind_clean.csv`.
+### 1. Endpoint: Clasificación de Contenido
+`POST /api/v1/analizar_texto`
 
-### Fase 3: Clasificación e Integración del LLM
-- **¿Qué buscamos?** Entender de qué trata el texto entrante. 
-  - Usaremos un modelo de Machine Learning clásico y veloz (ej. Random Forest o Naive Bayes) para la clasificación de categoría.
-  - Nos conectaremos a una API de LLM gratuita (ej. Gemini) usando *Prompt Engineering* exclusivo para extraer "palabras clave", en lugar de intentar entrenar un LLM nosotros mismos.
+**Lo que nos tienes que enviar:**
+```json
+{
+  "titulo": "Introducción a Spring Boot",
+  "texto": "En este contenido se presentan los conceptos básicos para crear APIs REST en Java..."
+}
+```
 
-### Fase 4: Búsqueda Semántica (Sistema de Recomendación)
-- **¿Qué buscamos?** Cumplir con el requisito del Hackathon de "Encontrar contenidos relacionados".
-- **¿Cómo?** Vectorizaremos los textos y aplicaremos Similitud del Coseno. Cuando entre un texto nuevo, nuestra matemática comparará ese vector contra nuestra "Fase 0" y encontrará los documentos que apuntan en la misma dirección semántica (incluso si no usan las mismas palabras exactas).
+**Lo que nosotros te devolveremos:**
+```json
+{
+  "categoria": "Backend",
+  "probabilidad": 0.89,
+  "dificultad": "Principiante",
+  "informacion_adicional": ["Java", "Spring Boot", "API REST"]
+}
+```
 
-### Fase 5: Empaquetado (El "Hand-off" al Backend)
-- **¿Qué buscamos?** Encapsular todo el código de las fases anteriores en una API de Python estructurada.
-- **Éxito:** El equipo de Backend puede llamar a nuestras dos URLs desde Java sin tener que entender de algoritmos o matemáticas, y el Frontend tiene datos confiables para graficar.
+### 2. Endpoint: Recomendación (Contenido Relacionado)
+`POST /api/v1/buscar_parecido`
+
+**Lo que nos tienes que enviar:**
+```json
+{
+  "id_documento": 105
+}
+```
+
+**Lo que nosotros te devolveremos:**
+```json
+{
+  "recomendaciones": [101, 12, 45]
+}
+```
