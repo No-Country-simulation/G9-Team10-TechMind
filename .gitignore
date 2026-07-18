@@ -1,1 +1,110 @@
+# ─── Secrets & Env ───────────────────────────────────
 .env
+.env.*
+!.env.example
+*.local
+
+# ─── Frontend (React / Vite) ──────────────────────────
+front-end/node_modules/
+front-end/.pnpm-store/
+front-end/dist/
+front-end/dist-ssr/
+front-end/.vite/
+front-end/coverage/
+
+# pnpm
+front-end/pnpm-debug.log*
+
+# Logs
+front-end/logs/
+front-end/*.log
+front-end/npm-debug.log*
+front-end/yarn-debug.log*
+front-end/yarn-error.log*
+
+# ─── Backend (Spring Boot / Maven) ───────────────────
+back-end/target/
+back-end/.mvn/wrapper/maven-wrapper.jar
+back-end/.mvn/timing.properties
+!back-end/.mvn/wrapper/maven-wrapper.properties
+back-end/*.jar
+back-end/*.war
+back-end/*.nar
+back-end/*.ear
+back-end/*.zip
+back-end/*.tar.gz
+back-end/*.rar
+back-end/HELP.md
+back-end/.flattened-pom.xml
+
+# Spring Boot devtools restart file
+.spring-boot-devtools.properties
+
+# ─── Data Science (Python / Jupyter) ─────────────────
+Data/__pycache__/
+Data/**/__pycache__/
+Data/*.pyc
+Data/**/*.pyc
+Data/.ipynb_checkpoints/
+Data/**/.ipynb_checkpoints/
+Data/*.pkl
+Data/*.joblib
+Data/*.h5
+Data/*.hdf5
+Data/venv/
+Data/.venv/
+Data/env/
+
+# Python general
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model files (large — almacenar en OCI Object Storage)
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# ─── IDEs & Editors ──────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS ──────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ─── OCI / Cloud credentials ─────────────────────────
+oci_api_key*.pem
+config
+~/.oci/
+
+# ─── Misc ─────────────────────────────────────────────
+*.bak
+*.tmp
+*.swp
