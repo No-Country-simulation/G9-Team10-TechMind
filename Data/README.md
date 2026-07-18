@@ -36,8 +36,6 @@ graph TD
     end
 ```
 
----
-
 ## 🚀 Fases del Proyecto (Completadas)
 
 ### Fase 1: Ingesta de Datos
