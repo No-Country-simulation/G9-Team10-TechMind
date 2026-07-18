@@ -1,6 +1,6 @@
-# 🗺️ TechMind: Área de Datos (README + Roadmap)
+# 🗺️ TechMind: Área de Datos (Documentación Final)
 
-Bienvenidos al repositorio central del equipo de Data. Este documento sirve como guía, documentación y hoja de ruta para entender cómo transformamos texto crudo en un "Cerebro" de Inteligencia Artificial que alimentará a toda la aplicación.
+Bienvenidos al repositorio central del equipo de Data. Este documento sirve como documentación final para entender cómo transformamos texto crudo en un "Cerebro" de Inteligencia Artificial que alimentará a toda la aplicación.
 
 ---
 
@@ -38,25 +38,25 @@ graph TD
 
 ---
 
-## 🚀 Fases del Proyecto y Estado Actual
+## 🚀 Fases del Proyecto (Completadas)
 
-### Fase 1: Ingesta de Datos (✅ Completada)
+### Fase 1: Ingesta de Datos
 
 - **Objetivo:** Evitar el "arranque en frío" del proyecto recolectando 1000 documentos técnicos (GitHub, arXiv, etc.).
 - **Resultado:** Archivo `dataset_techmind_raw.csv`.
 
-### Fase 2: Limpieza de Datos / Data Wrangling (✅ Completada)
+### Fase 2: Limpieza de Datos / Data Wrangling
 
 - **Objetivo:** Transformar el texto ruidoso limpiando etiquetas HTML, URLs y unificando formatos para que la máquina no se confunda.
 - **Resultado:** Archivo de datos limpios listo para vectorizar.
 
-### Fase 3 y 4: Enfoque Híbrido (Machine Learning + LLM) (✅ Completada)
+### Fase 3 y 4: Enfoque Híbrido (Machine Learning + LLM)
 
 - **Decisión de Arquitectura:** En lugar de entrenar una Regresión Logística supervisada que requiere de miles de etiquetas manuales, optamos por un modelo **Híbrido**.
 - **Clasificación (LLM):** Integramos la API de Gemini para analizar semánticamente el texto y extraer **Categoría, Dificultad y Palabras Clave (Tags)** de manera automática, sin "arranque en frío".
 - **Búsqueda Semántica / Recomendación (ML Clásico):** Tomamos los datos limpios de la Fase 2, los pasamos por un pipeline de `TfidfVectorizer` y calculamos la **Similitud del Coseno** de forma 100% local, devolviendo los documentos más parecidos al instante y sin incurrir en costos de API.
 
-### Fase 5: API Final Modular (✅ Completada)
+### Fase 5: API Final Modular
 
 - **Objetivo:** Encapsular los modelos matemáticos y Gemini dentro de una API web rápida (FastAPI).
 - **Decisión de Arquitectura (Importante):** No exponer nuestra API a internet público. Será una "Micro-API" de uso interno. El Backend será el único autorizado a consumir esta API internamente para obtener los cálculos.
