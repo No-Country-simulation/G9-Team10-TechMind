@@ -1,8 +1,5 @@
 # ☁️ DevOps: Despliegue en Oracle Cloud Infrastructure (OCI)
 
-Bienvenidos a la carpeta de investigación de **OCI (Oracle Cloud Infrastructure)**.
-Dado que los módulos de Frontend y Data (API) están muy avanzados, esta sección está dedicada a los miembros del equipo que tengan disponibilidad para investigar y planificar nuestro despliegue en la nube mientras el Backend termina su integración.
-
 ## 🎯 Objetivos de Investigación
 
 Necesitamos documentar y probar cómo vamos a subir nuestras 3 piezas a la nube:
@@ -30,4 +27,3 @@ Necesitamos documentar y probar cómo vamos a subir nuestras 3 piezas a la nube:
 - [ ] Investigar cómo guardar archivos pesados (Modelos ML) en OCI Object Storage.
 
 ---
-**¡Manos a la obra! Cualquier avance o descubrimiento, documéntenlo en esta carpeta.**
