@@ -29,9 +29,6 @@ public class DocumentEntity {
 
     private String content;
 
-    //ManytoMany
-    private List<String> keywords;
-
     private Float version;
 
     private Nivel nivel;

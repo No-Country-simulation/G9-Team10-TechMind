@@ -13,7 +13,6 @@ public class DocumentMapper {
         d.setHash(entity.getHash());
         d.setContent(entity.getContent());
         d.setTitle(entity.getTitle());
-        d.setKeywords(entity.getKeywords());
         d.setNivel(entity.getNivel());
         d.setVersion(entity.getVersion());
         return d;
@@ -25,7 +24,6 @@ public class DocumentMapper {
         e.setHash(d.getHash());
         e.setContent(d.getContent());
         e.setTitle(d.getTitle());
-        e.setKeywords(d.getKeywords());
         e.setNivel(d.getNivel());
         e.setVersion(d.getVersion());
         return e;

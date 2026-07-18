@@ -19,8 +19,6 @@ public class Document {
 
     private String content;
 
-    private List<String> keywords;
-
     private Float version;
 
     private Nivel nivel;

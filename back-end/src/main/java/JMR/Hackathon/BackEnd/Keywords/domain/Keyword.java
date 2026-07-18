@@ -3,6 +3,8 @@ package JMR.Hackathon.BackEnd.Keywords.domain;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -13,5 +15,9 @@ public class Keyword {
     Long id;
 
     String keyword;
+
+    List<Long> documentId;
+
+
 
 }
