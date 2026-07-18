@@ -1,4 +1,4 @@
-package JMR.Hackathon.BackEnd.DocumentKeywordRepository.domain;
+package JMR.Hackathon.BackEnd.DocumentKeyword.domain;
 
 import java.util.List;
 import java.util.Optional;

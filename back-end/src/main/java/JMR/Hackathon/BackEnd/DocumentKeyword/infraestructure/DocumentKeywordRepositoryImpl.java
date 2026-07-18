@@ -1,8 +1,8 @@
-package JMR.Hackathon.BackEnd.DocumentKeywordRepository.infraestructure;
+package JMR.Hackathon.BackEnd.DocumentKeyword.infraestructure;
 
 
-import JMR.Hackathon.BackEnd.DocumentKeywordRepository.domain.DocumentKeyword;
-import JMR.Hackathon.BackEnd.DocumentKeywordRepository.domain.DocumentKeywordRepository;
+import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeyword;
+import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 
