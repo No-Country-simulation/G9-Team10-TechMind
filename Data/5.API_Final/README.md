@@ -27,6 +27,10 @@ Para asegurar que nuestro código no se rompa el día de la presentación y sea 
 3.  **Trazabilidad:** Cada respuesta de la API incluye un `trace_id` único. Si hay un bug, podemos rastrearlo en los logs al instante.
 4.  **Health Checks:** Agregamos una ruta `/health/ready` necesaria para desplegar los contenedores en Oracle Cloud Infrastructure (OCI).
 
+## 💡 Notas para el Equipo (Seguridad y Escalabilidad)
+*   **Seguridad del `.env`:** Nunca subimos el archivo `.env` a GitHub para proteger nuestras API Keys de robos. Por eso usamos el `.env.example` como plantilla para que cada desarrollador arme el suyo localmente.
+*   **Escalabilidad del LLM:** Si en el futuro queremos cambiar Gemini por OpenAI (ChatGPT) o Claude, **no basta** con cambiar la API Key. Gracias a nuestra arquitectura modular, solo tendríamos que crear un nuevo archivo (ej. `openai_service.py`) y conectarlo en el router, sin romper el resto de la aplicación.
+
 ## 🚀 ¿Cómo ejecutarla en local?
 1. Renombra el archivo de ejemplo `.env` (o crea uno) y coloca tu `GEMINI_API_KEY`.
 2. Instala los requerimientos: `pip install -r requirements.txt`
