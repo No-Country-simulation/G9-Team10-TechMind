@@ -1,4 +1,4 @@
-package JMR.Hackathon.BackEnd.DocumentKeywordRepository.domain;
+package JMR.Hackathon.BackEnd.DocumentKeyword.domain;
 
 
 import lombok.Builder;

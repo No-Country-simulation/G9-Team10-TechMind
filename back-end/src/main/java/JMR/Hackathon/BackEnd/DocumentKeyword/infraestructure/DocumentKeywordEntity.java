@@ -1,4 +1,4 @@
-package JMR.Hackathon.BackEnd.DocumentKeywordRepository.infraestructure;
+package JMR.Hackathon.BackEnd.DocumentKeyword.infraestructure;
 
 import jakarta.persistence.*;
 import lombok.*;
