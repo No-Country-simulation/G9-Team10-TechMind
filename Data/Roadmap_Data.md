@@ -50,17 +50,16 @@ graph TD
 - **Objetivo:** Transformar el texto ruidoso limpiando etiquetas HTML, URLs y unificando formatos para que la máquina no se confunda.
 - **Resultado:** Archivo de datos limpios listo para vectorizar.
 
-### Fase 3: Clasificación e Integración del LLM (⏳ En Progreso)
+### Fase 3 y 4: Enfoque Híbrido (Machine Learning + LLM) (✅ Completada)
 
-- **Objetivo (ML):** Entrenar un modelo de Machine Learning clásico (ej. TF-IDF + Regresión) con los datos limpios para predecir la **Categoría** del texto entrante.
-- **Objetivo (LLM):** Integrar la API de Gemini para leer el texto y extraer el nivel de **Dificultad** y **Palabras Clave (Tags)**.
+- **Decisión de Arquitectura:** En lugar de entrenar una Regresión Logística supervisada que requiere de miles de etiquetas manuales, optamos por un modelo **Híbrido**.
+- **Clasificación (LLM):** Integramos la API de Gemini para analizar semánticamente el texto y extraer **Categoría, Dificultad y Palabras Clave (Tags)** de manera automática, sin "arranque en frío".
+- **Búsqueda Semántica / Recomendación (ML Clásico):** Tomamos los datos limpios de la Fase 2, los pasamos por un pipeline de `TfidfVectorizer` y calculamos la **Similitud del Coseno** de forma 100% local, devolviendo los documentos más parecidos al instante y sin incurrir en costos de API.
 
-### Fase 4: Búsqueda Semántica / Recomendación (⏳ En Progreso)
-
-- **Objetivo:** Vectorizar los textos y usar *Similitud del Coseno*. Cuando entre un texto nuevo, la matemática comparará ese vector contra nuestra "Fase 0" y encontrará los 3 documentos que apuntan en la misma dirección semántica.
-
-### Fase 5: API Final Modular (⏳ En Progreso)
+### Fase 5: API Final Modular (✅ Completada)
 
 - **Objetivo:** Encapsular los modelos matemáticos y Gemini dentro de una API web rápida (FastAPI).
 - **Decisión de Arquitectura (Importante):** No exponer nuestra API a internet público. Será una "Micro-API" de uso interno. El Backend será el único autorizado a consumir esta API internamente para obtener los cálculos.
-- **Estado Actual:** Estructura de código modular ya construida (`routers`, `services`). Actualmente configurada para devolver *Mock Data* (datos estáticos de prueba) con el fin de desbloquear inmediatamente a los equipos de Backend y Frontend mientras se entrenan los modelos finales.
+- **Estado Actual:** Estructura construida y endpoints conectados a los modelos reales. 
+  1. `/analizar_texto`: Conectado a Gemini.
+  2. `/buscar_parecido`: Conectado al motor local TF-IDF.

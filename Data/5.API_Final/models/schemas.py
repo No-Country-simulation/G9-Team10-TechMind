@@ -7,7 +7,7 @@ class TextoInput(BaseModel):
     texto: str
 
 class RecomendacionInput(BaseModel):
-    id_documento: int
+    keywords: str
 
 # --- CONTRATO DE SALIDA ---
 class AnalisisResponse(BaseModel):
@@ -18,5 +18,5 @@ class AnalisisResponse(BaseModel):
     trace_id: str
 
 class RecomendacionResponse(BaseModel):
-    recomendaciones: List[int] # Ejemplo: [101, 105, 204]
+    recomendaciones: List[dict] # Lista de dicts con titulo, score y preview
     trace_id: str

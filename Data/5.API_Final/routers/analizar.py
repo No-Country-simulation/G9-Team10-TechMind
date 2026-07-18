@@ -29,8 +29,8 @@ async def analizar_texto(entrada: TextoInput):
     metadata_gemini = extraer_metadata(entrada.texto)
     
     return AnalisisResponse(
-        categoria="Desconocida", # Esto lo dará el ML de Rodrigo luego
-        probabilidad=0.0,
+        categoria=metadata_gemini.get("categoria", "Desconocida"),
+        probabilidad=metadata_gemini.get("probabilidad", 0.0),
         dificultad=metadata_gemini.get("dificultad", "Desconocida"),
         informacion_adicional=metadata_gemini.get("tags", []),
         trace_id=trace_id

@@ -17,14 +17,18 @@ def extraer_metadata(texto_entrada: str):
         return {"error": "API Key no configurada"}
         
     prompt = f"""
-    Eres un experto arquitecto de datos. Analiza el siguiente texto técnico y extrae la información requerida.
+    Eres un experto arquitecto de datos y clasificador automático. Analiza el siguiente texto técnico y extrae la información requerida.
     DEBES responder ÚNICAMENTE con un objeto JSON válido, sin Markdown (sin ```json) y sin texto adicional.
     
     El formato exacto debe ser:
     {{
+        "categoria": "Backend, Frontend, Data o DevOps",
+        "probabilidad": 0.95,
         "dificultad": "Principiante, Intermedio o Avanzado",
         "tags": ["tag1", "tag2", "tag3"]
     }}
+    
+    Nota: En 'probabilidad', coloca un número decimal entre 0.0 y 1.0 que represente tu confianza en la categoría asignada.
     
     Texto a analizar:
     {texto_entrada}
@@ -38,6 +42,8 @@ def extraer_metadata(texto_entrada: str):
         # Fallback de degradación elegante: Si Gemini falla, no rompemos el backend
         print(f"[Error Gemini]: {str(e)}")
         return {
+            "categoria": "Desconocida",
+            "probabilidad": 0.0,
             "dificultad": "Desconocida",
             "tags": ["Sin tags"]
         }

@@ -6,7 +6,12 @@ Aquí es donde todo el trabajo de limpieza de datos (Nairo) y matemáticas/ML (R
 ## 🎯 ¿Qué hace esta API?
 Esta es una **Micro-API interna** construida con **FastAPI**. Su único objetivo es hacer los cálculos pesados de Inteligencia Artificial de forma rápida y devolver respuestas en JSON. 
 
-Esta API **no está expuesta a internet público**. El único que se comunica con ella es el Backend en Java (Spring Boot) gestionado por Juan. 
+Esta API **no está expuesta a internet público**. El único que se comunica con ella es el Backend en Java (Spring Boot) gestionado por Juan.
+
+## 🧠 Enfoque Híbrido (Novedad)
+Implementamos una arquitectura híbrida para maximizar eficiencia:
+- **Clasificación Inteligente (`/analizar_texto`)**: Se apoya en un LLM (Gemini) para extraer Categoría, Dificultad y Palabras Clave sin necesidad de miles de datos etiquetados.
+- **Motor de Recomendación (`/buscar_parecido`)**: Utiliza Machine Learning clásico (TF-IDF y Similitud del Coseno) ejecutándose 100% en local sobre el modelo generado por Rodrigo. Cero latencia y cero costo.
 
 ## 🏗️ Arquitectura y Modularidad
 Para asegurar que nuestro código no se rompa el día de la presentación y sea fácil de escalar, dividimos el proyecto en módulos:
