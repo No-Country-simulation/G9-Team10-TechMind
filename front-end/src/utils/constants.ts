@@ -42,16 +42,3 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Otro:         '#64748b',
 };
 
-export const CATEGORY_ICONS: Record<string, string> = {
-  Backend:      '⚙️',
-  Frontend:     '🎨',
-  DevOps:       '🔧',
-  'Data Science': '🧠',
-  Seguridad:    '🔒',
-  Cloud:        '☁️',
-  Mobile:       '📱',
-  'Base de Datos': '🗄️',
-  Testing:      '🧪',
-  Arquitectura: '🏗️',
-  Otro:         '📄',
-};

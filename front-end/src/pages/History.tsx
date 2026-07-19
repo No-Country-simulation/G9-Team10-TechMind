@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Filter, ChevronDown, Check } from 'lucide-react';
-import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/utils/constants';
+import { CATEGORY_COLORS } from '@/utils/constants';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { mockRecentActivity } from '@/utils/mockData';
 import type { RecentActivity } from '@/types';
 import './HistoryKeywords.css';
@@ -170,7 +171,8 @@ export function History() {
                       className="cat-badge"
                       style={{ background:`${col}14`, color:col, border:`1px solid ${col}28` }}
                     >
-                      {CATEGORY_ICONS[item.categoria] ?? '📄'} {item.categoria}
+                      <CategoryIcon category={item.categoria} size={14} />
+                      <span>{item.categoria}</span>
                     </span>
                   </td>
                   <td>

@@ -5,9 +5,10 @@ import {
 } from 'recharts';
 import {
   FileText, Layers, TrendingUp, Zap,
-  ArrowUpRight, ArrowDownRight, Sparkles, Clock,
+  ArrowUpRight, ArrowDownRight, Sparkles, Clock, ArrowRight,
 } from 'lucide-react';
-import { CATEGORY_ICONS, CATEGORY_COLORS } from '@/utils/constants';
+import { CATEGORY_COLORS } from '@/utils/constants';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import {
   mockStats, mockCategories, mockKeywords,
   mockRecentActivity, mockWeeklyData,
@@ -278,15 +279,15 @@ export function Dashboard() {
         <div className="activity-card fade-up" style={{ animationDelay: '0.5s' }}>
           <div className="activity-header">
             <div className="activity-title">Actividad Reciente</div>
-            <a href="/history" style={{ fontSize: '0.78rem', color: 'var(--clr-primary-light)', textDecoration: 'none' }}>
-              Ver todo →
+            <a href="/history" style={{ fontSize: '0.78rem', color: 'var(--clr-primary-light)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              Ver todo <ArrowRight size={12} />
             </a>
           </div>
           <div className="activity-list stagger">
             {activity.map((item) => (
               <div key={item.id} className="activity-item">
                 <div className="activity-icon">
-                  {CATEGORY_ICONS[item.categoria] ?? '📄'}
+                  <CategoryIcon category={item.categoria} size={16} />
                 </div>
                 <div className="activity-info">
                   <div className="activity-item-title">{item.titulo}</div>
@@ -315,8 +316,8 @@ export function Dashboard() {
         <div className="quick-card fade-up" style={{ animationDelay: '0.6s' }}>
           <div className="quick-card-header">
             <div className="quick-card-title">Top Keywords</div>
-            <a href="/keywords" style={{ fontSize: '0.78rem', color: 'var(--clr-primary-light)', textDecoration: 'none' }}>
-              Ver todas →
+            <a href="/keywords" style={{ fontSize: '0.78rem', color: 'var(--clr-primary-light)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              Ver todas <ArrowRight size={12} />
             </a>
           </div>
           <div className="keyword-cloud stagger">

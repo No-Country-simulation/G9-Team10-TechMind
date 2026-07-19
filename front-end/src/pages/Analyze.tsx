@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
-import { Sparkles, ChevronRight, Code2, Tag, Eye, EyeOff } from 'lucide-react';
+import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings } from 'lucide-react';
 import { contentService } from '@/services/api';
-import { mockAnalysisResult } from '@/utils/mockData';
-import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/utils/constants';
+import { mockAnalysisResult, generateMockAnalysis } from '@/utils/mockData';
+import { CATEGORY_COLORS } from '@/utils/constants';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import type { ContentInput, ContentAnalysisResult } from '@/types';
 import './Analyze.css';
 
@@ -84,11 +85,7 @@ export function Analyze() {
     } catch {
       // Demo fallback
       await new Promise(r => setTimeout(r, 1200));
-      setResult({
-        ...mockAnalysisResult,
-        titulo: input.titulo,
-        texto_preview: input.texto.slice(0, 160) + (input.texto.length > 160 ? '…' : ''),
-      });
+      setResult(generateMockAnalysis(input.titulo, input.texto));
     } finally {
       setLoading(false);
     }
@@ -185,7 +182,7 @@ export function Analyze() {
                 <>
                   <Sparkles size={18} />
                   Analizar con IA
-                  <ChevronRight size={16} />
+                  <ArrowRight size={16} />
                 </>
               )}
             </button>
@@ -213,7 +210,7 @@ export function Analyze() {
         <div className="analyze-result-panel">
           {!result && !loading ? (
             <div className="result-empty">
-              <div className="result-empty-icon">🧠</div>
+              <div className="result-empty-icon"><Brain size={48} strokeWidth={1.5} /></div>
               <div className="result-empty-title">Listo para analizar</div>
               <p className="result-empty-text">
                 Ingresa tu contenido técnico y presiona "Analizar con IA" para ver los resultados de clasificación
@@ -221,7 +218,7 @@ export function Analyze() {
             </div>
           ) : loading ? (
             <div className="result-empty">
-              <div className="result-empty-icon" style={{ animation: 'spin-slow 1.5s linear infinite' }}>⚙️</div>
+              <div className="result-empty-icon" style={{ animation: 'spin-slow 1.5s linear infinite' }}><Settings size={48} strokeWidth={1.5} /></div>
               <div className="result-empty-title">Procesando…</div>
               <p className="result-empty-text">El modelo está clasificando tu contenido</p>
             </div>
@@ -236,7 +233,7 @@ export function Analyze() {
                     color: catColor,
                   }}
                 >
-                  <span>{CATEGORY_ICONS[result.categoria] ?? '📄'}</span>
+                  <CategoryIcon category={result.categoria} size={16} />
                   {result.categoria}
                 </div>
                 <div className="result-titulo">{result.titulo}</div>

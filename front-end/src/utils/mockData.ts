@@ -103,6 +103,49 @@ export const mockAnalysisResult: ContentAnalysisResult = {
   texto_preview: 'En este contenido se presentan los conceptos básicos para la creación de APIs REST utilizando Java y Spring Boot.',
 };
 
+export function generateMockAnalysis(titulo: string, texto: string): ContentAnalysisResult {
+  const textLower = (titulo + ' ' + texto).toLowerCase();
+  
+  let categoria = 'Otro';
+  let informacion_adicional: string[] = [];
+  let probabilidad = 0.75 + Math.random() * 0.2; // 0.75 - 0.95
+
+  if (textLower.includes('reac') || textLower.includes('vue') || textLower.includes('html') || textLower.includes('css') || textLower.includes('front')) {
+    categoria = 'Frontend';
+    informacion_adicional = ['React', 'UI', 'Componentes'];
+  } else if (textLower.includes('spring') || textLower.includes('ja') || textLower.includes('api') || textLower.includes('back') || textLower.includes('rest')) {
+    categoria = 'Backend';
+    informacion_adicional = ['Java', 'Backend', 'API REST'];
+  } else if (textLower.includes('dock') || textLower.includes('kube') || textLower.includes('ci/cd') || textLower.includes('cloud') || textLower.includes('aws')) {
+    categoria = 'DevOps';
+    informacion_adicional = ['Docker', 'Deploy', 'Pipeline'];
+  } else if (textLower.includes('sql') || textLower.includes('base') || textLower.includes('postgre') || textLower.includes('mongo') || textLower.includes('bd') || textLower.includes('mys')) {
+    categoria = 'Base de Datos';
+    informacion_adicional = ['SQL', 'Query', 'Almacenamiento'];
+  } else if (textLower.includes('py') || textLower.includes('machine') || textLower.includes('dat') || textLower.includes('ia') || textLower.includes('tensor')) {
+    categoria = 'Data Science';
+    informacion_adicional = ['Python', 'Modelos', 'IA'];
+  } else if (textLower.includes('segur') || textLower.includes('jwt') || textLower.includes('auth') || textLower.includes('token')) {
+    categoria = 'Seguridad';
+    informacion_adicional = ['Auth', 'JWT', 'Protección'];
+  }
+
+  // Extract a few words from text as additional mock keywords
+  const words = texto.split(/\s+/).filter(w => w.length > 5).slice(0, 2).map(w => w.replace(/[^\wáéíóú]/g, ''));
+  informacion_adicional = [...new Set([...informacion_adicional, ...words])].filter(Boolean);
+  if (informacion_adicional.length === 0) informacion_adicional = ['Análisis', 'General'];
+
+  return {
+    id: `demo-${Date.now()}`,
+    titulo: titulo || 'Sin título',
+    categoria,
+    probabilidad,
+    informacion_adicional,
+    timestamp: new Date().toISOString(),
+    texto_preview: texto.slice(0, 160) + (texto.length > 160 ? '…' : ''),
+  };
+}
+
 export const mockWeeklyData = [
   { dia: 'Lun', documentos: 42, promedio_precision: 89 },
   { dia: 'Mar', documentos: 58, promedio_precision: 91 },
