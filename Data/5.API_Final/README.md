@@ -1,38 +1,74 @@
-# 🚀 Fase 5: API Final (Micro-API)
+# 🚀 Microservicio de IA Bilingüe (TechMind)
 
-¡Bienvenidos a la carpeta de la Fase 5! 
-Aquí es donde todo el trabajo de limpieza de datos (Nairo) y matemáticas/ML (Rodrigo) cobra vida y se conecta con el resto del proyecto.
+Bienvenido al núcleo de Inteligencia Artificial de TechMind. Este microservicio, escrito en **Python (FastAPI)**, actúa como el cerebro semántico del backend principal desarrollado en **Spring Boot (Java)**. 
 
-## 🎯 ¿Qué hace esta API?
-Esta es una **Micro-API interna** construida con **FastAPI**. Su único objetivo es hacer los cálculos pesados de Inteligencia Artificial de forma rápida y devolver respuestas en JSON. 
+---
 
-Esta API **no está expuesta a internet público**. El único que se comunica con ella es el Backend en Java (Spring Boot) gestionado por Juan.
+## 🏗️ Arquitectura Definitiva
 
-## 🧠 Enfoque Híbrido (Novedad)
-Implementamos una arquitectura híbrida para maximizar eficiencia:
-- **Clasificación Inteligente (`/analizar_texto`)**: Se apoya en un LLM (Gemini) para extraer Categoría, Dificultad y Palabras Clave sin necesidad de miles de datos etiquetados.
-- **Motor de Recomendación (`/buscar_parecido`)**: Utiliza Machine Learning clásico (TF-IDF y Similitud del Coseno) ejecutándose 100% en local sobre el modelo generado por Rodrigo. Cero latencia y cero costo.
+Tras múltiples iteraciones y optimizaciones de consumo, logramos implementar un motor de búsqueda ultra-ligero y rápido, que puede ejecutarse incluso en servidores gratuitos (Free Tier) de bajo rendimiento.
 
-## 🏗️ Arquitectura y Modularidad
-Para asegurar que nuestro código no se rompa el día de la presentación y sea fácil de escalar, dividimos el proyecto en módulos:
+### 1. 🧠 Motor de Similitud Semántica (ONNX)
+Eliminamos la masiva dependencia de **PyTorch** (>2GB) y convertimos nuestro modelo NLP (`paraphrase-multilingual-MiniLM-L12-v2`) en un binario matemático puro usando **ONNX Runtime Cuantizado a 8-Bits (Int8)**. 
+- **Peso de RAM:** Se redujo de 440MB a **110MB**.
+- **Performance:** Inferencias en < 50 milisegundos.
+- **Mecanismo:** Procesamos la tokenización a mano y calculamos el producto punto de los vectores embebidos generados *offline* (`dataset_reference.joblib`). El motor puede mapear textos en español con respuestas en inglés y viceversa de manera nativa sin usar traductores.
 
-*   📂 **`routers/`**: Aquí están las URLs que Juan va a llamar (`/analizar_texto` y `/buscar_parecido`).
-*   📂 **`services/`**: Aquí vive el "cerebro". La conexión con el modelo de Rodrigo (`ml_service.py`) y la conexión con el LLM (`gemini_service.py`).
-*   📂 **`models/`**: Aquí validamos estrictamente los JSON de entrada y salida usando Pydantic (`schemas.py`).
-*   📂 **`core/`**: Configuraciones críticas de seguridad (API Keys) y parches de compatibilidad.
+### 2. 🤖 IA Generativa y Clasificación (Gemini RAG)
+Integramos **Google Gemini 1.5 Flash** para procesar los textos puros (sin estructurar) que envía Spring Boot y devolver la metadata rica, limpiamente empaquetada. 
+- **Contrato JSON Estricto:** Obligamos a Gemini a emitir respuestas en formato JSON puro (`response_mime_type="application/json"`), eliminando fallas de parseo en Java.
 
-## 🛡️ Mejoras Nivel "Hackathon Ganador" (Implementadas)
-1.  **Modo Mock Dinámico:** Si la IA falla el día de la presentación, tenemos un "Botón de Pánico" en el archivo `.env` (`USE_MOCK=True`). Si se activa, la API devuelve datos falsos pero perfectos al instante. ¡La demo nunca se cae!
-2.  **Degradación Elegante:** Si Gemini se confunde o devuelve un JSON roto, el sistema lo atrapa y devuelve un estado "Desconocido", evitando que la aplicación del Frontend explote.
-3.  **Trazabilidad:** Cada respuesta de la API incluye un `trace_id` único. Si hay un bug, podemos rastrearlo en los logs al instante.
-4.  **Health Checks:** Agregamos una ruta `/health/ready` necesaria para desplegar los contenedores en Oracle Cloud Infrastructure (OCI).
+---
 
-## 💡 Notas para el Equipo (Seguridad y Escalabilidad)
-*   **Seguridad del `.env`:** Nunca subimos el archivo `.env` a GitHub para proteger nuestras API Keys de robos. Por eso usamos el `.env.example` como plantilla para que cada desarrollador arme el suyo localmente.
-*   **Escalabilidad del LLM:** Si en el futuro queremos cambiar Gemini por OpenAI (ChatGPT) o Claude, **no basta** con cambiar la API Key. Gracias a nuestra arquitectura modular, solo tendríamos que crear un nuevo archivo (ej. `openai_service.py`) y conectarlo en el router, sin romper el resto de la aplicación.
+## 🔌 API Endpoints (Contrato Spring Boot)
 
-## 🚀 ¿Cómo ejecutarla en local?
-1. Renombra el archivo de ejemplo `.env` (o crea uno) y coloca tu `GEMINI_API_KEY`.
-2. Instala los requerimientos: `pip install -r requirements.txt`
-3. Ejecuta el servidor: `python -m uvicorn main:app --reload`
-4. Visita `http://127.0.0.1:8000/docs` para ver la interfaz de prueba (Swagger).
+### 1. `POST /api/v1/analyze` (Clasificación Automática)
+Recibe un título y texto y usa IA Generativa (Gemini) para devolver la categoría y metadata.
+* **Envío (Spring Boot):**
+```json
+{
+  "titulo": "Introducción a Kubernetes",
+  "texto": "Kubernetes es una plataforma de código abierto..."
+}
+```
+* **Respuesta (Python):**
+```json
+{
+  "Titulo": "Introducción a Kubernetes",
+  "Texto": "Kubernetes es una plataforma de código abierto...",
+  "Categoria": "DevOps",
+  "probabilidadCategoria": 0.96,
+  "Nivel": "Intermedio",
+  "keywords": ["Kubernetes", "Despliegue", "Contenedores"],
+  "version": "1.0",
+  "trace_id": "abc-123"
+}
+```
+
+### 2. `POST /api/v1/search` (Búsqueda por Texto)
+Transforma un string (ej: "quiero aprender a desplegar en la nube") en vectores matemáticos para devolver una recomendación semántica bilingüe. Devuelve los IDs de los artículos relevantes.
+
+### 3. `POST /api/v1/recommend` (Recomendación Matemática)
+Busca en milisegundos documentos similares basados en un `doc_id` enviado por el frontend. Hace el cálculo usando producto punto contra los `corpus_embeddings.npy` de forma directa sin pasar por el LLM.
+
+---
+
+## ⚙️ Despliegue con Docker (OCI / Nube)
+
+El proyecto está 100% contenerizado.
+
+### Requisito previo
+Debes crear un archivo `.env` en este directorio con tu clave de Google Gemini:
+```env
+GEMINI_API_KEY=AIzaSyTuClaveDeGeminiAqui
+USE_MOCK=False
+```
+*(Nota: Si pones `USE_MOCK=True`, el servicio no consumirá cuota de Gemini y devolverá respuestas fijas instántaneas).*
+
+### Construir y Ejecutar
+Solo debes posicionarte en esta carpeta (`5.API_Final`) y ejecutar:
+```bash
+docker-compose up --build -d
+```
+La API estará corriendo y escuchando peticiones en `http://localhost:8000`. 
+Puedes probarla interactivamente visitando `http://localhost:8000/docs`.
