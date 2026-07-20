@@ -7,9 +7,21 @@ from tokenizers import Tokenizer
 MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'models')
 ONNX_MODEL_DIR = os.path.join(MODELS_DIR, 'onnx_model_quantized')
 
+import hashlib
+
 # Cargar artefactos
 try:
     dataset_ref = joblib.load(os.path.join(MODELS_DIR, 'dataset_reference.joblib'))
+    
+    # Parche ADR-002: Generar doc_id determinista con MD5 si el CSV base no lo incluye
+    if 'doc_id' not in dataset_ref.columns:
+        dataset_ref['doc_id'] = dataset_ref.apply(
+            lambda row: hashlib.md5((str(row['title']) + str(row.get('clean_text', ''))).encode('utf-8')).hexdigest(),
+            axis=1
+        )
+    if 'source_type' not in dataset_ref.columns:
+        dataset_ref['source_type'] = "Documento_Referencia"
+        
     corpus_embeddings = np.load(os.path.join(MODELS_DIR, 'corpus_embeddings.npy'))
     
     # Cargar IA ONNX

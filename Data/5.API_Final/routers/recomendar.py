@@ -8,7 +8,7 @@ from core.config import USE_MOCK
 router = APIRouter()
 
 @router.post("/search", response_model=RecomendacionResponse)
-async def buscar_semantica(entrada: SearchRequest):
+def buscar_semantica(entrada: SearchRequest):
     """
     Busca documentos relacionados a una query de texto natural (Español o Inglés).
     """
@@ -29,7 +29,7 @@ async def buscar_semantica(entrada: SearchRequest):
 
 
 @router.post("/recommend", response_model=RecomendacionResponse)
-async def buscar_parecido(entrada: RecommendRequest):
+def buscar_parecido(entrada: RecommendRequest):
     """
     Busca documentos similares a un documento existente usando su doc_id.
     """

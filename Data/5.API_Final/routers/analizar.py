@@ -8,7 +8,7 @@ from core.config import USE_MOCK
 router = APIRouter()
 
 @router.post("/analyze", response_model=AnalisisResponse)
-async def analizar_texto(entrada: TextoInput):
+def analizar_texto(entrada: TextoInput):
     """
     Recibe un texto nuevo, lo clasifica y extrae metadata (Gemini).
     Responde estrictamente con el contrato esperado por Spring Boot.

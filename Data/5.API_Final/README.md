@@ -53,6 +53,16 @@ Busca en milisegundos documentos similares basados en un `doc_id` enviado por el
 
 ---
 
+## 🏆 Estándares de Industria Aplicados (Arquitectura L6)
+Para asegurar que este proyecto resalte en portafolios de reclutadores, hemos formalizado las decisiones técnicas siguiendo estándares Big Tech:
+1. **Architecture Decision Records (ADRs):** Nuestras decisiones críticas están documentadas profesionalmente.
+   - [ADR-001: Migración de PyTorch a ONNX](file:///C:/Users/Maxi.DESKTOP-8LJC287/Desktop/Entornos_Antigravity/W5(Varios)/techmind/Repo/(2)/Data/5.API_Final/docs/ADRs/ADR-001-Migracion-ONNX.md)
+   - [ADR-002: Reemplazo de UUID4 por Hashes MD5](file:///C:/Users/Maxi.DESKTOP-8LJC287/Desktop/Entornos_Antigravity/W5(Varios)/techmind/Repo/(2)/Data/5.API_Final/docs/ADRs/ADR-002-Hashes-MD5.md)
+2. **Concurrencia Segura (Async):** Los endpoints intensivos han sido delegados al *ThreadPool* nativo de FastAPI (removiendo `async def` de tareas bloqueantes de CPU) para evitar la congelación del Event Loop.
+3. **Control Estricto de Dependencias:** El archivo `requirements.txt` tiene todas sus versiones fijadas (Pinned) para asegurar builds deterministas y repetibles en la nube.
+
+---
+
 ## ⚙️ Despliegue con Docker (OCI / Nube)
 
 El proyecto está 100% contenerizado.
