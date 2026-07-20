@@ -16,53 +16,62 @@ public class DocumentController {
 
     private final DocumentService service;
 
-    @Transactional
+
     @PostMapping("/create")
     public DocumentResponse createDocument(@RequestBody  DocumentRequest request) {
 
-        //return service.create(request);
+        return service.create(request);
 
 
-        return null;
+
     }
 
     @GetMapping("/all")
     public List<DocumentResponse> getAllDocuments() {
 
-        //return service.getAllDocuments();
+        return service.getAllDocuments();
 
-        return null;
+
     }
 
     @GetMapping("/{id}")
-    public DocumentResponse getDocumentById(@PathVariable String id) {
+    public DocumentResponse getDocumentById(@PathVariable Long id) {
 
-        //return service.getDocumentById(id);
+        return service.getDocumentById(id);
 
-        return null;
+
     }
 
     @GetMapping("/{title}")
-    public List<DocumentResponse> getDocumentsByTitle(@PathVariable String title) {
+    public DocumentResponse getDocumentsByTitle(@PathVariable String title) {
 
-        //return service.getDocumentsByTitle(title);
-
-        return null;
-    }
-
-    @Transactional
-    @DeleteMapping("/delete/{id}")
-    public void deleteDocumentById(@PathVariable String id) {
-
-    // service.deleteDocumentById(id);
+        return service.getDocumentsByTitle(title);
 
     }
 
-    @Transactional
-    @DeleteMapping("/delete/{title}")
+    @GetMapping("/keyword/{keyword}")
+    public List<DocumentResponse> getDocumentByKeyword(@PathVariable String Keyword) {
+
+        return service.getDocumentByKeyword(Keyword);
+
+
+    }
+
+
+
+
+    @DeleteMapping("/id/{id}")
+    public void deleteDocumentById(@PathVariable Long id) {
+
+    service.deleteDocumentById(id);
+
+    }
+
+
+    @DeleteMapping("/title/{title}")
     public void deleteDocumentByTitle(@PathVariable String title) {
 
-        // service.deleteDocumentByTitle(title)
+      service.deleteDocumentByTitle(title);
 
     }
 
