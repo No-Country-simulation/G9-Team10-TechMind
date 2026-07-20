@@ -16,8 +16,5 @@ public class Keyword {
 
     String keyword;
 
-    List<Long> documentId;
-
-
 
 }

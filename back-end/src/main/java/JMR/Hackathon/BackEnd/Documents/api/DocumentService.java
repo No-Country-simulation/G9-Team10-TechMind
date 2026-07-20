@@ -9,10 +9,13 @@ import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.Hasher;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
+import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
 import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -21,9 +24,7 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
 
-    private final KeywordRepository keywordRepository;
-
-    private final DocumentKeywordRepository documentKeywordRepository;
+   private final saveKeywords saveKeywords;
 
     private final NormalizedText  textNormalizer;
 
@@ -31,14 +32,18 @@ public class DocumentService {
 
     private final DocumentDTOMapper dtoMapper;
 
+    private final DocumentKeywordRepository  documentKeywordRepository;
 
+    private final KeywordRepository keywordRepository;
+
+    @Transactional
    public DocumentResponse create(DocumentRequest request) {
 
         String textToHash = request.title() + " " + request.content();
 
         String normalized = textNormalizer.normalize(textToHash);
 
-        String hash = Hasher.sha256(normalized);
+        String hash = hasher.sha256(normalized);
 
         if (documentRepository.existsByHash(hash)) {
 
@@ -51,20 +56,24 @@ public class DocumentService {
 
         }else{
 
-            //Llamar a python y registrar nuevo
+            Document d = dtoMapper.ToDomain(request);
+            d.setHash(hash);
+
+            Document s = documentRepository.save(d)
+                    .orElseThrow();
 
 
+            saveKeywords.save(s,request.keyword());
+
+
+
+
+            return dtoMapper.ToResponse(s);
 
 
 
         }
 
-
-
-
-
-
-        return null;
    }
 
    public List<DocumentResponse> getAllDocuments() {
@@ -89,12 +98,17 @@ public class DocumentService {
 
     }
 
+    @Transactional
     public void deleteDocumentById(Long id) {
+
+
+
 
        documentRepository.delete(id);
 
     }
 
+    @Transactional
     public void deleteDocumentByTitle(String title) {
 
        documentRepository.deleteByTitle(title);
@@ -102,12 +116,25 @@ public class DocumentService {
     }
 
 
+    public List<String> getKeywordsByTitle(String title) {
 
+        Document  document = documentRepository.FindByTitle(title)
+                .orElseThrow();
 
+        List<Long> kID  =documentKeywordRepository.findKeywordIdsByDocumentId(document.getId());
 
+        List<String> K = new ArrayList<>();
 
+        for(Long id : kID){
 
+            Keyword keyword = keywordRepository.FindById(id)
+                    .orElseThrow();
+            K.add(keyword.getKeyword());
+        }
 
+        return K;
+
+    }
 
 
 }

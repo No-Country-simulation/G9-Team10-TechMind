@@ -1,0 +1,8 @@
+package JMR.Hackathon.BackEnd.Keywords.api.Dtos;
+
+public record KeywordResponse(
+        Long id,
+        String keyword
+
+) {
+}

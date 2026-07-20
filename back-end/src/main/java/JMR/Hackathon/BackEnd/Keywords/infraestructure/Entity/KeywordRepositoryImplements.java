@@ -68,11 +68,12 @@ public class KeywordRepositoryImplements implements KeywordRepository {
                 .toList();
     }
 
-
     @Override
-    public List<Long> findAllDocumentIds() {
+    public Boolean existsByKeyword(String iKeyword) {
 
-        return jpaRepository.findAllDocumentIds();
+        return  jpaRepository.existsByKeyword(iKeyword);
 
     }
+
+
 }
