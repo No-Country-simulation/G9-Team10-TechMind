@@ -116,25 +116,24 @@ public class DocumentService {
     }
 
 
-    public List<String> getKeywordsByTitle(String title) {
+    public List<DocumentResponse> getDocumentByKeyword(String keyword) {
 
-        Document  document = documentRepository.FindByTitle(title)
+        Keyword k = keywordRepository.FindByKeyword(keyword)
                 .orElseThrow();
+        List<Long> dID = documentKeywordRepository.findDocumentIdsByKeywordId(k.getId());
 
-        List<Long> kID  =documentKeywordRepository.findKeywordIdsByDocumentId(document.getId());
+        List<DocumentResponse> responses = new ArrayList<>();
 
-        List<String> K = new ArrayList<>();
+        for (Long id : dID) {
 
-        for(Long id : kID){
-
-            Keyword keyword = keywordRepository.FindById(id)
+            Document find = documentRepository.FindById(id)
                     .orElseThrow();
-            K.add(keyword.getKeyword());
+
+            responses.add(dtoMapper.ToResponse(find));
+
         }
 
-        return K;
+        return responses;
 
     }
-
-
 }

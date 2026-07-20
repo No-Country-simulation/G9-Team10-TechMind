@@ -1,6 +1,7 @@
 package JMR.Hackathon.BackEnd.Keywords.api.controller;
 
 
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
 import JMR.Hackathon.BackEnd.Keywords.api.Dtos.KeywordResponse;
 import JMR.Hackathon.BackEnd.Keywords.api.KeywordService;
 import JMR.Hackathon.BackEnd.Keywords.api.mapper.KeywordDTOMapper;
@@ -34,14 +35,25 @@ public class KeywordController {
         return service.FindAll();
     }
 
-    @Transactional
+    @GetMapping("/title")
+    public List<KeywordResponse>  getKeywordsByTitle(@PathVariable String title) {
+
+        return service.getKeywordsByTitle(title);
+
+    }
+
+
+
+
+
+        @Transactional
     @DeleteMapping("/delete/{id}")
     public void deleteById(@PathVariable Long id){
 
         service.deleteById(id);
     }
 
-    @Transactional
+
     @DeleteMapping("/delete/{keyword}")
     public void deleteByKeyword(@PathVariable String keyword){
         service.deleteByKeyword(keyword);

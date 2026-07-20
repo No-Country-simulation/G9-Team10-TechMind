@@ -49,10 +49,11 @@ public class DocumentController {
 
     }
 
-    @GetMapping("/keyword/{title}")
-    public List<String> getKeywordsByTitle(@PathVariable String title) {
+    @GetMapping("/keyword/{keyword}")
+    public List<DocumentResponse> getDocumentByKeyword(@PathVariable String Keyword) {
 
-        return service.getKeywordsByTitle(title);
+        return service.getDocumentByKeyword(Keyword);
+
 
     }
 
