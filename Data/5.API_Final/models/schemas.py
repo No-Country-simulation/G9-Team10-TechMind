@@ -24,6 +24,7 @@ class AnalisisResponse(BaseModel):
     keywords: List[str]
     version: str = "1.0"
     trace_id: str
+    doc_id: str
 
 class DocumentoSimilitud(BaseModel):
     doc_id: str

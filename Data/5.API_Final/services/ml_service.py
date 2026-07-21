@@ -87,10 +87,10 @@ def buscar_similares(keywords: str, top_k: int = 5):
             row = dataset_ref.iloc[idx]
             resultados.append({
                 "doc_id": row['doc_id'],
-                "title": row['title'],
+                "title": row['titulo'],
                 "source_type": row['source_type'],
                 "similarity_score": round(score, 4),
-                "preview": row['clean_text'][:200] + "..." if len(row['clean_text']) > 200 else row['clean_text']
+                "preview": row['texto'][:200] + "..." if len(row['texto']) > 200 else row['texto']
             })
             
     return {"resultados": resultados}
@@ -127,10 +127,10 @@ def buscar_por_id(doc_id: str, top_k: int = 3):
             row = dataset_ref.iloc[idx]
             resultados.append({
                 "doc_id": row['doc_id'],
-                "title": row['title'],
+                "title": row['titulo'],
                 "source_type": row['source_type'],
                 "similarity_score": round(score, 4),
-                "preview": row['clean_text'][:200] + "..." if len(row['clean_text']) > 200 else row['clean_text']
+                "preview": row['texto'][:200] + "..." if len(row['texto']) > 200 else row['texto']
             })
             
     return {"resultados": resultados}

@@ -5,7 +5,14 @@ from models.schemas import TextoInput, AnalisisResponse
 import uuid
 from core.config import USE_MOCK
 
+import hashlib
+import re
+
 router = APIRouter()
+
+def generate_doc_id(text: str) -> str:
+    text = re.sub(r"\s+", " ", str(text).strip())
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 @router.post("/analyze", response_model=AnalisisResponse)
 def analizar_texto(entrada: TextoInput):
@@ -14,6 +21,7 @@ def analizar_texto(entrada: TextoInput):
     Responde estrictamente con el contrato esperado por Spring Boot.
     """
     trace_id = str(uuid.uuid4())
+    doc_id = generate_doc_id(entrada.texto)
     
     if USE_MOCK:
         return AnalisisResponse(
@@ -24,7 +32,8 @@ def analizar_texto(entrada: TextoInput):
             Nivel="Intermedio",
             keywords=["Java", "Spring Boot", "API REST"],
             version="1.0",
-            trace_id=trace_id
+            trace_id=trace_id,
+            doc_id=doc_id
         )
         
     # Llamada real a Gemini (Fase 5.3)
@@ -39,5 +48,6 @@ def analizar_texto(entrada: TextoInput):
         Nivel=metadata_gemini.get("dificultad", "Desconocida"),
         keywords=metadata_gemini.get("tags", []),
         version="1.0",
-        trace_id=trace_id
+        trace_id=trace_id,
+        doc_id=doc_id
     )
