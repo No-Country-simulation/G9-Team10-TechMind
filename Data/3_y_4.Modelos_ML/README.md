@@ -99,6 +99,13 @@ Se migró a embeddings densos con el modelo **`paraphrase-multilingual-MiniLM-L1
 ### Exploración adicional (crédito: Nairobi Betancourt)
 Antes de definir el enfoque final, Nairobi construyó dos notebooks exploratorios probando embeddings con el modelo `all-MiniLM-L6-v2` (entrenado mayormente en inglés). Ese trabajo fue clave para detectar tempranamente el riesgo de mismatch de idioma entre queries en español y un modelo/corpus en inglés, lo que llevó a elegir directamente un modelo multilingüe en la versión final en vez de descubrir el problema más tarde. Notebooks disponibles en el repositorio como referencia para futuras iteraciones.
 
+### Correcciones aplicadas tras revisión cruzada del equipo
+Una revisión de Maximiliano sobre los notebooks de Datos detectó tres problemas antes de la integración final, ya corregidos:
+
+- **`doc_id` inestables:** la versión inicial de Nairobi generaba `doc_id` con `uuid.uuid4()` (aleatorio en cada ejecución), lo que desincronizaba los embeddings de este notebook si el dataset se regeneraba. Se corrigió a un hash SHA256 determinístico de 16 caracteres sobre el texto del documento — el mismo contenido siempre produce el mismo `doc_id`, sin importar cuántas veces se ejecute el notebook de origen.
+- **Limpieza redundante:** este notebook volvía a remover URLs y HTML que el dataset de Nairobi ya entrega limpio, gastando cómputo innecesario. Se simplificó a solo remover bloques de código (paso específico de este notebook) y normalizar espacios.
+- **Umbral de búsqueda estricto:** una similitud mínima fija (`0.3`) podía devolver una lista vacía en consultas ambiguas. Se eliminó el filtro — las funciones de búsqueda siempre devuelven el top-N más cercano, dejando que el consumidor (Backend/Frontend) decida cómo tratar un score bajo.
+
 ---
 
 ## Ejemplos de solicitud y respuesta
@@ -115,19 +122,19 @@ Salida (`buscar_parecido`):
 {
   "resultados_similares": [
     {
-      "doc_id": "eae0cf72-8ef5-489a-b8de-f7ab48296625",
+      "doc_id": "1deb6d98e1a7a3fb",
       "titulo": "Contexto: Search for word in files",
       "source_type": "Tutorial_Codigo",
       "similitud_score": 0.808
     },
     {
-      "doc_id": "e39a3455-3058-4d7c-ab1c-8552b1372ceb",
+      "doc_id": "7e5db7c2a4871191",
       "titulo": "Contexto: List all text files in",
       "source_type": "Tutorial_Codigo",
       "similitud_score": 0.767
     },
     {
-      "doc_id": "2a467f52-fda9-495a-bb4c-6b35db659652",
+      "doc_id": "645016857cf59706",
       "titulo": "Contexto: Search for a file named",
       "source_type": "Tutorial_Codigo",
       "similitud_score": 0.727
@@ -140,10 +147,10 @@ Salida (`buscar_parecido`):
 
 Entrada:
 ```json
-{ "entrada": "b8a4743c-b051-42d5-a862-0b78a5ab54e3" }
+{ "entrada": "dd7091be0f4a5017" }
 ```
 
-Salida: mismo formato que el Ejemplo 1 — la función `buscar_parecido` detecta automáticamente si la entrada es un `doc_id` (formato UUID) o texto libre, sin necesidad de un parámetro adicional.
+Salida: mismo formato que el Ejemplo 1 — la función `buscar_parecido` detecta automáticamente si la entrada es un `doc_id` (hash hexadecimal de 16 caracteres) o texto libre, sin necesidad de un parámetro adicional. *(Nota: el formato de `doc_id` cambió de UUID a hash de 16 caracteres tras la corrección de estabilidad — ver sección de correcciones arriba.)*
 
 **Ejemplo 3 — tema con baja cobertura en el corpus (limitación documentada)**
 
