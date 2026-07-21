@@ -5,6 +5,7 @@ from typing import List, Optional
 class TextoInput(BaseModel):
     titulo: str
     texto: str
+    doc_id: Optional[str] = None
 
 class SearchRequest(BaseModel):
     query: str

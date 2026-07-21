@@ -21,7 +21,7 @@ def analizar_texto(entrada: TextoInput):
     Responde estrictamente con el contrato esperado por Spring Boot.
     """
     trace_id = str(uuid.uuid4())
-    doc_id = generate_doc_id(entrada.texto)
+    doc_id = entrada.doc_id if entrada.doc_id else generate_doc_id(entrada.texto)
     
     if USE_MOCK:
         return AnalisisResponse(
