@@ -81,15 +81,36 @@
 /* ─── Reset & Base ───────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { 
+  scroll-behavior: smooth; 
+  background-color: var(--clr-bg);
+}
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--clr-bg);
   color: var(--clr-text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  /* Imagen de biblioteca en alta calidad */
+  background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=2500&q=80');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.12;
+  z-index: -1;
+  animation: library-pan 45s ease-in-out infinite alternate;
+  pointer-events: none;
+  filter: blur(6px);
 }
 
 #root {
@@ -162,6 +183,12 @@ body {
 @keyframes rotate-border {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+@keyframes library-pan {
+  0%   { transform: scale(1) translate(0, 0); }
+  50%  { transform: scale(1.05) translate(1%, 1%); }
+  100% { transform: scale(1) translate(-1%, -1%); }
 }
 
 /* ─── Utility Classes ────────────────────────────── */
