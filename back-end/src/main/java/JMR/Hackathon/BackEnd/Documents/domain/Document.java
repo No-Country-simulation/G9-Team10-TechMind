@@ -2,8 +2,6 @@ package JMR.Hackathon.BackEnd.Documents.domain;
 
 import lombok.*;
 
-import java.util.List;
-
 @AllArgsConstructor
 @Getter
 @Setter
@@ -13,15 +11,17 @@ public class Document {
 
     private Long id;
 
-    private String hash;
+    private String docID;
 
     private String title;
 
     private String content;
 
+    private String lenguage;
+
     private Float version;
 
-    private Nivel nivel;
+    private dificultad dificultad;
 
 
 

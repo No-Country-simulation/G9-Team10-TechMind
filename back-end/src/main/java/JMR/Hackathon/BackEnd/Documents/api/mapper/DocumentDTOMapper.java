@@ -27,7 +27,7 @@ public class DocumentDTOMapper {
                 .title(resquest.title())
                 .content(resquest.content())
                 .version(resquest.version())
-                .nivel(resquest.nivel())
+                .dificultad(resquest.dificultad())
                 .build();
     }
 

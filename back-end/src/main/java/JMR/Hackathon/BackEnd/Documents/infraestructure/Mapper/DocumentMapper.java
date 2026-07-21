@@ -10,10 +10,10 @@ public class DocumentMapper {
     public Document ToDomain(DocumentEntity entity){
         Document d = new Document();
         d.setId(entity.getId());
-        d.setHash(entity.getHash());
+        d.setDocID(entity.getDocID());
         d.setContent(entity.getContent());
         d.setTitle(entity.getTitle());
-        d.setNivel(entity.getNivel());
+        d.setDificultad(entity.getDificultad());
         d.setVersion(entity.getVersion());
         return d;
     }
@@ -21,10 +21,10 @@ public class DocumentMapper {
     public DocumentEntity ToEntity(Document d){
         DocumentEntity e = new DocumentEntity();
         e.setId(d.getId());
-        e.setHash(d.getHash());
+        e.setDocID(d.getDocID());
         e.setContent(d.getContent());
         e.setTitle(d.getTitle());
-        e.setNivel(d.getNivel());
+        e.setDificultad(d.getDificultad());
         e.setVersion(d.getVersion());
         return e;
     }

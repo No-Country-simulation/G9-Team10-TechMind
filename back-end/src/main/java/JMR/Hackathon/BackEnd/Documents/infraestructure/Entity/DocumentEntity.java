@@ -1,14 +1,12 @@
 package JMR.Hackathon.BackEnd.Documents.infraestructure.Entity;
 
 
-import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
+import JMR.Hackathon.BackEnd.Documents.domain.dificultad;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
-
-import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,14 +20,15 @@ public class DocumentEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-    private String hash;
+    private String docID;
 
     private String title;
 
     private String content;
 
+    private String lenguage;
+
     private Float version;
 
-    private Nivel nivel;
+    private dificultad dificultad;
 }
