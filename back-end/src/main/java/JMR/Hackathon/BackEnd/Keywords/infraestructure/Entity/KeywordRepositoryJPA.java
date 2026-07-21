@@ -18,5 +18,6 @@ public interface KeywordRepositoryJPA extends CrudRepository<KeywordEntity, Long
 
     List<KeywordEntity> findAll();
 
-    List<Long> findAllDocumentIds();
+    Boolean existsByKeyword(String keyword);
+
 }

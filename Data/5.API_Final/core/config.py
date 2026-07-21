@@ -8,4 +8,4 @@ load_dotenv()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Modo Simulacro: Si es True, no llama a los modelos reales y devuelve datos fijos
-USE_MOCK = os.environ.get("USE_MOCK", "True").lower() == "true"
+USE_MOCK = os.environ.get("USE_MOCK", "False").lower() == "true"

@@ -1,22 +1,37 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 # --- CONTRATO DE ENTRADA ---
 class TextoInput(BaseModel):
     titulo: str
     texto: str
 
-class RecomendacionInput(BaseModel):
-    keywords: str
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
 
-# --- CONTRATO DE SALIDA ---
+class RecommendRequest(BaseModel):
+    doc_id: str
+    top_k: int = 3
+
+# --- CONTRATO DE SALIDA (Alineado estrictamente con Spring Boot) ---
 class AnalisisResponse(BaseModel):
-    categoria: str
-    probabilidad: float
-    dificultad: str
-    informacion_adicional: List[str]
+    Titulo: str
+    Texto: str
+    Categoria: str
+    probabilidadCategoria: float
+    Nivel: str
+    keywords: List[str]
+    version: str = "1.0"
     trace_id: str
 
+class DocumentoSimilitud(BaseModel):
+    doc_id: str
+    title: str
+    source_type: str
+    similarity_score: float
+    preview: str
+
 class RecomendacionResponse(BaseModel):
-    recomendaciones: List[dict] # Lista de dicts con titulo, score y preview
+    resultados: List[DocumentoSimilitud]
     trace_id: str

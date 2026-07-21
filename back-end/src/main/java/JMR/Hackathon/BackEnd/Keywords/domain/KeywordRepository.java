@@ -17,6 +17,7 @@ public interface KeywordRepository {
 
     List<Keyword> findAll();
 
-    List<Long> findAllDocumentIds();
+    Boolean existsByKeyword(String iKeyword);
+
 
 }

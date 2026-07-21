@@ -1,6 +1,7 @@
 package JMR.Hackathon.BackEnd.Documents.api.mapper;
 
 
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import lombok.AllArgsConstructor;
@@ -21,10 +22,12 @@ public class DocumentDTOMapper {
 
     }
 
-    public Document ToDomain(DocumentResponse documentResponse){
+    public Document ToDomain(DocumentRequest resquest){
         return Document.builder()
-                .title(documentResponse.title())
-                .content(documentResponse.content())
+                .title(resquest.title())
+                .content(resquest.content())
+                .version(resquest.version())
+                .nivel(resquest.nivel())
                 .build();
     }
 

@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from models.schemas import RecomendacionInput, RecomendacionResponse
+from fastapi import APIRouter, HTTPException
+from models.schemas import SearchRequest, RecommendRequest, RecomendacionResponse, DocumentoSimilitud
 from services import ml_service
 
 import uuid
@@ -7,25 +7,45 @@ from core.config import USE_MOCK
 
 router = APIRouter()
 
-@router.post("/buscar_parecido", response_model=RecomendacionResponse)
-async def buscar_parecido(entrada: RecomendacionInput):
+@router.post("/search", response_model=RecomendacionResponse)
+def buscar_semantica(entrada: SearchRequest):
     """
-    Recibe una cadena de keywords y devuelve los 5 documentos más similares usando TF-IDF.
+    Busca documentos relacionados a una query de texto natural (Español o Inglés).
     """
     trace_id = str(uuid.uuid4())
     
     if USE_MOCK:
-        # Mock de recomendaciones
         mock_data = [
-            {"title": "Documento Mock 1", "similarity_score": 0.95, "preview": "Texto de prueba 1..."},
-            {"title": "Documento Mock 2", "similarity_score": 0.82, "preview": "Texto de prueba 2..."}
+            DocumentoSimilitud(doc_id="mock-1", title="Mock Document", source_type="PDF", similarity_score=0.99, preview="Mock text"),
         ]
-        return RecomendacionResponse(recomendaciones=mock_data, trace_id=trace_id)
+        return RecomendacionResponse(resultados=mock_data, trace_id=trace_id)
         
-    # Conectar con ml_service para buscar en la matriz TF-IDF
-    resultados = ml_service.buscar_similares(entrada.keywords, top_k=5)
+    resultados = ml_service.buscar_similares(entrada.query, top_k=entrada.top_k)
     
     if "error" in resultados:
-        return RecomendacionResponse(recomendaciones=[], trace_id=trace_id)
+        raise HTTPException(status_code=500, detail=resultados["error"])
         
-    return RecomendacionResponse(recomendaciones=resultados["resultados"], trace_id=trace_id)
+    return RecomendacionResponse(resultados=resultados["resultados"], trace_id=trace_id)
+
+
+@router.post("/recommend", response_model=RecomendacionResponse)
+def buscar_parecido(entrada: RecommendRequest):
+    """
+    Busca documentos similares a un documento existente usando su doc_id.
+    """
+    trace_id = str(uuid.uuid4())
+    
+    if USE_MOCK:
+        mock_data = [
+            DocumentoSimilitud(doc_id="mock-2", title="Related Mock", source_type="TXT", similarity_score=0.88, preview="Related mock text"),
+        ]
+        return RecomendacionResponse(resultados=mock_data, trace_id=trace_id)
+        
+    resultados = ml_service.buscar_por_id(entrada.doc_id, top_k=entrada.top_k)
+    
+    if "error" in resultados:
+        if "no encontrado" in resultados["error"].lower():
+            raise HTTPException(status_code=404, detail=resultados["error"])
+        raise HTTPException(status_code=500, detail=resultados["error"])
+        
+    return RecomendacionResponse(resultados=resultados["resultados"], trace_id=trace_id)
