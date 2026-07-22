@@ -22,7 +22,9 @@ public class DocumentKeywordRepositoryImpl implements DocumentKeywordRepository 
 
        DocumentKeywordEntity e = mapper.ToEntity(documentKeyword);
 
-        return jpaRepository.save(e).map(mapper::ToDomain);
+       DocumentKeywordEntity saved = jpaRepository.save(e);
+
+        return Optional.of(mapper.ToDomain(e));
     }
 
 

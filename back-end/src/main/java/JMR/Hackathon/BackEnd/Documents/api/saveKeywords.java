@@ -10,7 +10,6 @@ import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.text.Normalizer;
 import java.util.List;
 
 @Component
@@ -33,7 +32,7 @@ public class saveKeywords {
             Keyword a = new Keyword();
             a.setKeyword(normalizedKeyword);
 
-            Keyword keywordEntity = keywordRepository.FindByKeyword(normalizedKeyword)
+            Keyword keywordEntity = keywordRepository.findByKeyword(normalizedKeyword)
                     .orElseGet(() -> {
                         Keyword k = new Keyword();
                         k.setKeyword(normalizedKeyword);

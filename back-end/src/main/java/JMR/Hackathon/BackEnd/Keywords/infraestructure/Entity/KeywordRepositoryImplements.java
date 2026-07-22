@@ -24,23 +24,24 @@ public class KeywordRepositoryImplements implements KeywordRepository {
 
         KeywordEntity e =  mapper.ToEntity(keyword);
 
-        return jpaRepository.save(e)
-                .map(mapper::ToDomain);
+        KeywordEntity savedEntity = jpaRepository.save(e);
+
+        return Optional.ofNullable(mapper.ToDomain(savedEntity));
 
     }
 
     @Override
-    public Optional<Keyword> FindById(Long id) {
+    public Optional<Keyword> findById(Long id) {
 
 
-        return jpaRepository.FindById(id)
+        return jpaRepository.findById(id)
                 .map(mapper::ToDomain);
     }
 
     @Override
-    public Optional<Keyword> FindByKeyword(String keyword) {
+    public Optional<Keyword> findByKeyword(String keyword) {
 
-        return jpaRepository.FindByKeyword(keyword)
+        return jpaRepository.findByKeyword(keyword)
                 .map(mapper::ToDomain);
 
     }

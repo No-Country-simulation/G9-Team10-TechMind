@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @AllArgsConstructor
-@RestController("/document")
+@RestController
+@RequestMapping("/document")
 public class DocumentController {
 
     private final DocumentService service;
@@ -34,7 +35,7 @@ public class DocumentController {
 
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public DocumentResponse getDocumentById(@PathVariable Long id) {
 
         return service.getDocumentById(id);
@@ -42,7 +43,7 @@ public class DocumentController {
 
     }
 
-    @GetMapping("/{title}")
+    @GetMapping("/title/{title}")
     public DocumentResponse getDocumentsByTitle(@PathVariable String title) {
 
         return service.getDocumentsByTitle(title);

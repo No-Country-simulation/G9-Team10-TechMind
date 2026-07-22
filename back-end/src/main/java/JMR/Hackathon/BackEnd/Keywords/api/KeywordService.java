@@ -29,7 +29,7 @@ public class KeywordService {
 
     public KeywordResponse FindById(Long id){
 
-        return keywordRepository.FindById(id)
+        return keywordRepository.findById(id)
                 .map(mapperDTO::ToResponse)
                 .orElseThrow();
 
@@ -38,7 +38,7 @@ public class KeywordService {
 
     public KeywordResponse FindByKeyword(String k){
 
-        return keywordRepository.FindByKeyword(k).map(mapperDTO::ToResponse)
+        return keywordRepository.findByKeyword(k).map(mapperDTO::ToResponse)
                 .orElseThrow();
 
     }
@@ -73,7 +73,7 @@ public class KeywordService {
 
         for(Long id : kID){
 
-            Keyword keyword = keywordRepository.FindById(id)
+            Keyword keyword = keywordRepository.findById(id)
                     .orElseThrow();
             K.add(mapperDTO.ToResponse(keyword));
         }

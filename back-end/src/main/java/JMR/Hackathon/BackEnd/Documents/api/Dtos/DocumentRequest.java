@@ -1,7 +1,7 @@
 package JMR.Hackathon.BackEnd.Documents.api.Dtos;
 
 
-import JMR.Hackathon.BackEnd.Documents.domain.dificultad;
+import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
 import lombok.Builder;
 
 import java.util.List;
@@ -11,7 +11,7 @@ public record DocumentRequest(
         String title,
         String content,
         Float version,
-        dificultad dificultad,
+        Nivel Nivel,
         List<String> keyword
 ) {
 }

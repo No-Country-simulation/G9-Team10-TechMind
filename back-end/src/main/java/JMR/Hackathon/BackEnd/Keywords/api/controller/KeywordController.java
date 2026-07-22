@@ -14,28 +14,29 @@ import java.util.List;
 
 
 @AllArgsConstructor
-@RestController("/keyword")
+@RestController
+@RequestMapping("/keyword")
 public class KeywordController {
 
     private final KeywordService service;
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public KeywordResponse findById(@PathVariable Long id) {
 
        return service.FindById(id);
     }
 
-    @GetMapping("/{keyword}")
+    @GetMapping("/keyword/{keyword}")
     public KeywordResponse findByKeyword(@PathVariable String keyword){
         return service.FindByKeyword(keyword);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/findAll")
     public List<KeywordResponse> findAll() {
         return service.FindAll();
     }
 
-    @GetMapping("/title")
+    @GetMapping("/title/{title}")
     public List<KeywordResponse>  getKeywordsByTitle(@PathVariable String title) {
 
         return service.getKeywordsByTitle(title);
@@ -44,17 +45,15 @@ public class KeywordController {
 
 
 
-
-
-        @Transactional
-    @DeleteMapping("/delete/{id}")
+    @Transactional
+    @DeleteMapping("/id/{id}")
     public void deleteById(@PathVariable Long id){
 
         service.deleteById(id);
     }
 
 
-    @DeleteMapping("/delete/{keyword}")
+    @DeleteMapping("/keyword/{keyword}")
     public void deleteByKeyword(@PathVariable String keyword){
         service.deleteByKeyword(keyword);
     }

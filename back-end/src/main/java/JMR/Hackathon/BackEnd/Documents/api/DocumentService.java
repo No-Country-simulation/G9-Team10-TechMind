@@ -39,40 +39,7 @@ public class DocumentService {
     @Transactional
    public DocumentResponse create(DocumentRequest request) {
 
-        String textToHash = request.title() + " " + request.content();
-
-        String normalized = textNormalizer.normalize(textToHash);
-
-        String hash = hasher.sha256(normalized);
-
-        if (documentRepository.existsByHash(hash)) {
-
-            Document d = documentRepository.FindByHash(hash)
-                    .orElseThrow();
-
-
-            return dtoMapper.ToResponse(d);
-
-
-        }else{
-
-            Document d = dtoMapper.ToDomain(request);
-            d.setHash(hash);
-
-            Document s = documentRepository.save(d)
-                    .orElseThrow();
-
-
-            saveKeywords.save(s,request.keyword());
-
-
-
-
-            return dtoMapper.ToResponse(s);
-
-
-
-        }
+        return null;
 
    }
 
@@ -118,7 +85,7 @@ public class DocumentService {
 
     public List<DocumentResponse> getDocumentByKeyword(String keyword) {
 
-        Keyword k = keywordRepository.FindByKeyword(keyword)
+        Keyword k = keywordRepository.findByKeyword(keyword)
                 .orElseThrow();
         List<Long> dID = documentKeywordRepository.findDocumentIdsByKeywordId(k.getId());
 

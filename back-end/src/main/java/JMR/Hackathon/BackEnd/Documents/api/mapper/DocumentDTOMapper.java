@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
-@NoArgsConstructor
+
 @AllArgsConstructor
 @Component
 public class DocumentDTOMapper {
@@ -27,7 +27,7 @@ public class DocumentDTOMapper {
                 .title(resquest.title())
                 .content(resquest.content())
                 .version(resquest.version())
-                .dificultad(resquest.dificultad())
+                .nivel(resquest.Nivel())
                 .build();
     }
 

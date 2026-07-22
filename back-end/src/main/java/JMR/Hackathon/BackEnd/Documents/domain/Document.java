@@ -13,15 +13,21 @@ public class Document {
 
     private String docID;
 
+    private String trace_id;
+
     private String title;
 
     private String content;
+
+    private String Categoria;
+
+    private Float probabilidadCategoria;
 
     private String lenguage;
 
     private Float version;
 
-    private dificultad dificultad;
+    private Nivel nivel;
 
 
 

@@ -7,11 +7,10 @@ import java.util.Optional;
 
 public interface KeywordRepositoryJPA extends CrudRepository<KeywordEntity, Long> {
 
-    Optional<KeywordEntity> save(KeywordEntity keywordEntity);
 
-    Optional<KeywordEntity> FindById(Long id);
+    Optional<KeywordEntity> findById(Long id);
 
-    Optional<KeywordEntity> FindByKeyword(String keyword);
+    Optional<KeywordEntity> findByKeyword(String keyword);
 
 
     void deleteByKeyword(String keyword);

@@ -8,7 +8,6 @@ import java.util.Optional;
 
 public interface DocumentKeywordRepositoryJPA extends JpaRepository<DocumentKeywordEntity,Long> {
 
-    Optional<DocumentKeywordEntity> save(DocumentKeywordEntity documentKeywordEntity);
 
     List<DocumentKeywordEntity> findByDocumentId(Long documentId);
 

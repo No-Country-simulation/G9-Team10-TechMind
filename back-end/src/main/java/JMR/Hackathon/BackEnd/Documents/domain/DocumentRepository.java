@@ -10,14 +10,11 @@ public interface DocumentRepository {
     Optional<Document> FindById(Long id); //endpoint
 
     Optional<Document> FindByTitle(String title); //endpoint
-
-    Optional<Document> FindByHash(String hash); // no endpoint
+    // no endpoint
 
     void delete(Long id); //endpoint
 
     void deleteByTitle(String title);
-
-    boolean existsByHash(String hash);
 
     List<Document> findAll(); //endpoint
 

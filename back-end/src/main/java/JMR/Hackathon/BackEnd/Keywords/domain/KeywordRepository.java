@@ -7,9 +7,9 @@ public interface KeywordRepository {
 
     Optional<Keyword> save(Keyword keyword);
 
-    Optional<Keyword> FindById(Long id);
+    Optional<Keyword> findById(Long id);
 
-    Optional<Keyword> FindByKeyword(String keyword);
+    Optional<Keyword> findByKeyword(String keyword);
 
     void deleteById(Long id);
 

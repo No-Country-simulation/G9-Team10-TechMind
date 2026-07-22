@@ -21,31 +21,25 @@ public class DocumentRepositoryImplements implements DocumentRepository {
     public Optional<Document> save(Document document) {
 
         DocumentEntity documentEntity = mapper.ToEntity(document);
-
-        return jpaRepository.save(documentEntity)
-                .map(mapper::ToDomain);
+        DocumentEntity savedEntity = jpaRepository.save(documentEntity);
+        return Optional.ofNullable(mapper.ToDomain(savedEntity));
 
     }
 
     @Override
     public Optional<Document> FindById(Long id) {
 
-      return jpaRepository.FindById(id)
+      return jpaRepository.findById(id)
               .map(mapper::ToDomain);
     }
 
     @Override
     public Optional<Document> FindByTitle(String title) {
 
-        return jpaRepository.FindByTitle(title)
+        return jpaRepository.findByTitle(title)
                 .map(mapper::ToDomain);
     }
 
-    @Override
-    public Optional<Document> FindByHash(String hash) {
-
-        return jpaRepository.FindByHash(hash).map(mapper::ToDomain);
-    }
 
     @Override
     public void delete(Long id) {
@@ -59,11 +53,6 @@ public class DocumentRepositoryImplements implements DocumentRepository {
         jpaRepository.deleteByTitle(title);
     }
 
-    @Override
-    public boolean existsByHash(String hash) {
-
-        return jpaRepository.existsByhash(hash);
-    }
 
     @Override
     public List<Document> findAll() {
