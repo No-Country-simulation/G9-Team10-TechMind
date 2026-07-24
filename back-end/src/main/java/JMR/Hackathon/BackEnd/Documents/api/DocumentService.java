@@ -55,7 +55,7 @@ public class DocumentService {
                 .Categoria(aiResult.categoria())
                 .probabilidadCategoria(aiResult.probabilidadCategoria())
                 .version(Float.parseFloat(aiResult.version()))
-                .nivel(Nivel.valueOf(aiResult.nivel().toUpperCase()))
+                .nivel(parseNivel(aiResult.nivel()))
                 .build();
 
         // 3. Persistir el documento
@@ -129,5 +129,17 @@ public class DocumentService {
 
         return responses;
 
+    }
+
+    //  Convierte el string de nivel que viene de Python al enum Nivel.
+     
+    private Nivel parseNivel(String nivelStr) {
+        if (nivelStr == null) return Nivel.Intermedio;
+        for (Nivel n : Nivel.values()) {
+            if (n.name().equalsIgnoreCase(nivelStr.trim())) {
+                return n;
+            }
+        }
+        return Nivel.Intermedio; // fallback seguro
     }
 }
