@@ -4,12 +4,17 @@ package JMR.Hackathon.BackEnd.Documents.api.controller;
 import JMR.Hackathon.BackEnd.Documents.api.DocumentService;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Validated
 @AllArgsConstructor
 @RestController
 @RequestMapping("/document")
@@ -19,7 +24,7 @@ public class DocumentController {
 
 
     @PostMapping("/create")
-    public DocumentResponse createDocument(@RequestBody  DocumentRequest request) {
+    public DocumentResponse createDocument(@RequestBody @Valid DocumentRequest request) {
 
         return service.create(request);
 
@@ -36,7 +41,10 @@ public class DocumentController {
     }
 
     @GetMapping("/id/{id}")
-    public DocumentResponse getDocumentById(@PathVariable Long id) {
+    public DocumentResponse getDocumentById(@PathVariable
+                                                @Min(value = 1,message = "El ID debe ser mayor que 0")
+                                                @NotNull(message = "El ID no puede ser nulo")
+                                                Long id) {
 
         return service.getDocumentById(id);
 
@@ -44,14 +52,18 @@ public class DocumentController {
     }
 
     @GetMapping("/title/{title}")
-    public DocumentResponse getDocumentsByTitle(@PathVariable String title) {
+    public DocumentResponse getDocumentByTitle(@PathVariable
+                                                   @NotBlank(message = "El titulo no puede estar vacio")
+                                                   String title) {
 
-        return service.getDocumentsByTitle(title);
+        return service.getDocumentByTitle(title);
 
     }
 
     @GetMapping("/keyword/{keyword}")
-    public List<DocumentResponse> getDocumentByKeyword(@PathVariable String Keyword) {
+    public List<DocumentResponse> getDocumentByKeyword(@PathVariable
+                                                           @NotBlank(message = "La keyword no puede estar vacía")
+                                                           String Keyword) {
 
         return service.getDocumentByKeyword(Keyword);
 
@@ -62,7 +74,10 @@ public class DocumentController {
 
 
     @DeleteMapping("/id/{id}")
-    public void deleteDocumentById(@PathVariable Long id) {
+    public void deleteDocumentById(@PathVariable
+                                       @Min(value = 1,message = "El ID debe ser mayor que 0")
+                                       @NotNull(message = "El ID no puede ser nulo")
+                                       Long id) {
 
     service.deleteDocumentById(id);
 
@@ -70,7 +85,9 @@ public class DocumentController {
 
 
     @DeleteMapping("/title/{title}")
-    public void deleteDocumentByTitle(@PathVariable String title) {
+    public void deleteDocumentByTitle(@PathVariable
+                                          @NotBlank(message = "El titulo no puede estar vacio")
+                                          String title) {
 
       service.deleteDocumentByTitle(title);
 

@@ -43,8 +43,6 @@ public class DocumentDTOMapper {
         return Document.builder()
                 .title(request.title())
                 .content(request.content())
-                .version(request.version())
-                .nivel(request.Nivel())
                 .build();
     }
 }

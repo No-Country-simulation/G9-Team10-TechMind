@@ -1,17 +1,16 @@
 package JMR.Hackathon.BackEnd.Documents.api.Dtos;
 
 
-import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
-import java.util.List;
 
 @Builder
 public record DocumentRequest(
+        @NotBlank(message = "El titulo es obligatorio")
         String title,
-        String content,
-        Float version,
-        Nivel Nivel,
-        List<String> keyword
+        @NotBlank(message = "El contenido es obligatorio")
+        String content
+
 ) {
 }

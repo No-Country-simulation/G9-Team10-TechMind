@@ -3,10 +3,12 @@ package JMR.Hackathon.BackEnd.Keywords.api;
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
+import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
 import JMR.Hackathon.BackEnd.Keywords.api.Dtos.KeywordResponse;
 import JMR.Hackathon.BackEnd.Keywords.api.mapper.KeywordDTOMapper;
 import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
 import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
+import JMR.Hackathon.BackEnd.Keywords.domain.exception.KeywordNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +33,7 @@ public class KeywordService {
 
         return keywordRepository.findById(id)
                 .map(mapperDTO::ToResponse)
-                .orElseThrow();
+                .orElseThrow(()->new KeywordNotFoundException(id));
 
     }
 
@@ -39,8 +41,7 @@ public class KeywordService {
     public KeywordResponse FindByKeyword(String k){
 
         return keywordRepository.findByKeyword(k).map(mapperDTO::ToResponse)
-                .orElseThrow();
-
+                .orElseThrow(()->new KeywordNotFoundException(k));
     }
 
     public List<KeywordResponse> FindAll(){
@@ -54,10 +55,18 @@ public class KeywordService {
 
     @Transactional
     public void deleteByKeyword(String k){
+
+        keywordRepository.findByKeyword(k)
+                .orElseThrow(()->new KeywordNotFoundException(k));
+
         keywordRepository.deleteByKeyword(k);
     }
     @Transactional
     public void deleteById(Long id){
+
+        keywordRepository.findById(id)
+                .orElseThrow(()->new KeywordNotFoundException(id));
+
         keywordRepository.deleteById(id);
     }
 
@@ -65,7 +74,7 @@ public class KeywordService {
     public List<KeywordResponse> getKeywordsByTitle(String title) {
 
         Document document = documentRepository.FindByTitle(title)
-                .orElseThrow();
+                .orElseThrow(()->new DocumentNotFoundException(title));
 
         List<Long> kID  =documentKeywordRepository.findKeywordIdsByDocumentId(document.getId());
 
@@ -74,7 +83,7 @@ public class KeywordService {
         for(Long id : kID){
 
             Keyword keyword = keywordRepository.findById(id)
-                    .orElseThrow();
+                    .orElseThrow(()->new KeywordNotFoundException(id));
             K.add(mapperDTO.ToResponse(keyword));
         }
 

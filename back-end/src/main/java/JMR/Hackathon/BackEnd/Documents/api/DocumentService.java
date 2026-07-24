@@ -9,10 +9,12 @@ import JMR.Hackathon.BackEnd.Documents.api.mapper.DocumentDTOMapper;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
+import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.Hasher;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
 import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
 import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
+import JMR.Hackathon.BackEnd.Keywords.domain.exception.KeywordNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +61,8 @@ public class DocumentService {
                 .build();
 
         // 3. Persistir el documento
-        Document saved = documentRepository.save(document).orElseThrow();
+        Document saved = documentRepository.save(document)
+                .orElseThrow(() -> new IllegalStateException("error al guardar el documento."));
 
         // 4. Persistir las keywords extraídas por la IA
         if (aiResult.keywords() != null && !aiResult.keywords().isEmpty()) {
@@ -82,21 +85,23 @@ public class DocumentService {
 
     public DocumentResponse getDocumentById(Long id) {
 
-       return documentRepository.FindById(id).map(dtoMapper::ToResponse).orElseThrow();
+       return documentRepository.FindById(id).map(dtoMapper::ToResponse)
+               .orElseThrow(()->new DocumentNotFoundException(id));
 
     }
 
-    public DocumentResponse getDocumentsByTitle(String t){
+    public DocumentResponse getDocumentByTitle(String t){
 
-       return documentRepository.FindByTitle(t).map(dtoMapper::ToResponse).orElseThrow();
+       return documentRepository.FindByTitle(t).map(dtoMapper::ToResponse)
+               .orElseThrow(()->new DocumentNotFoundException(t));
 
     }
 
     @Transactional
     public void deleteDocumentById(Long id) {
 
-
-
+        documentRepository.FindById(id)
+                .orElseThrow(() -> new DocumentNotFoundException(id));
 
        documentRepository.delete(id);
 
@@ -104,6 +109,9 @@ public class DocumentService {
 
     @Transactional
     public void deleteDocumentByTitle(String title) {
+
+        documentRepository.FindByTitle(title)
+                .orElseThrow(() -> new DocumentNotFoundException(title));
 
        documentRepository.deleteByTitle(title);
 
@@ -113,7 +121,8 @@ public class DocumentService {
     public List<DocumentResponse> getDocumentByKeyword(String keyword) {
 
         Keyword k = keywordRepository.findByKeyword(keyword)
-                .orElseThrow();
+                .orElseThrow(() -> new KeywordNotFoundException(keyword));
+
         List<Long> dID = documentKeywordRepository.findDocumentIdsByKeywordId(k.getId());
 
         List<DocumentResponse> responses = new ArrayList<>();
@@ -121,7 +130,7 @@ public class DocumentService {
         for (Long id : dID) {
 
             Document find = documentRepository.FindById(id)
-                    .orElseThrow();
+                    .orElseThrow(()->new DocumentNotFoundException(id));
 
             responses.add(dtoMapper.ToResponse(find));
 
