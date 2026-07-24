@@ -2,11 +2,13 @@ package JMR.Hackathon.BackEnd.Documents.api;
 
 
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
 import JMR.Hackathon.BackEnd.Documents.api.mapper.DocumentDTOMapper;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
+import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.Hasher;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
 import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
@@ -24,24 +26,49 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
 
-   private final saveKeywords saveKeywords;
+    private final saveKeywords saveKeywords;
 
-    private final NormalizedText  textNormalizer;
+    private final NormalizedText textNormalizer;
 
     private final Hasher hasher;
 
     private final DocumentDTOMapper dtoMapper;
 
-    private final DocumentKeywordRepository  documentKeywordRepository;
+    private final DocumentKeywordRepository documentKeywordRepository;
 
     private final KeywordRepository keywordRepository;
 
+    private final AiClient aiClient;
+
     @Transactional
-   public DocumentResponse create(DocumentRequest request) {
+    public DocumentResponse create(DocumentRequest request) {
 
-        return null;
+        // 1. Llamar al microservicio Python para analizar el texto
+        AiAnalysisResponse aiResult = aiClient.analyze(request.title(), request.content());
 
-   }
+        // 2. Construir el dominio con los datos enriquecidos por la IA
+        Document document = Document.builder()
+                .docID(aiResult.docId())
+                .trace_id(aiResult.traceId())
+                .title(aiResult.titulo())
+                .content(aiResult.texto())
+                .Categoria(aiResult.categoria())
+                .probabilidadCategoria(aiResult.probabilidadCategoria())
+                .version(Float.parseFloat(aiResult.version()))
+                .nivel(Nivel.valueOf(aiResult.nivel().toUpperCase()))
+                .build();
+
+        // 3. Persistir el documento
+        Document saved = documentRepository.save(document).orElseThrow();
+
+        // 4. Persistir las keywords extraídas por la IA
+        if (aiResult.keywords() != null && !aiResult.keywords().isEmpty()) {
+            saveKeywords.save(saved, aiResult.keywords());
+        }
+
+        // 5. Retornar la respuesta enriquecida con las keywords
+        return dtoMapper.ToResponseWithKeywords(saved, aiResult.keywords());
+    }
 
    public List<DocumentResponse> getAllDocuments() {
 
