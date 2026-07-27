@@ -70,6 +70,7 @@ public class DocumentService {
         }
 
         // 5. Retornar la respuesta enriquecida con las keywords
+
         return dtoMapper.ToResponseWithKeywords(saved, aiResult.keywords());
     }
 

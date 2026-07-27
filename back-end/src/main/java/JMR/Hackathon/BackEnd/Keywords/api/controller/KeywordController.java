@@ -1,11 +1,8 @@
 package JMR.Hackathon.BackEnd.Keywords.api.controller;
 
 
-import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
 import JMR.Hackathon.BackEnd.Keywords.api.Dtos.KeywordResponse;
 import JMR.Hackathon.BackEnd.Keywords.api.KeywordService;
-import JMR.Hackathon.BackEnd.Keywords.api.mapper.KeywordDTOMapper;
-import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -23,17 +20,17 @@ public class KeywordController {
     @GetMapping("/id/{id}")
     public KeywordResponse findById(@PathVariable Long id) {
 
-       return service.FindById(id);
+       return service.findById(id);
     }
 
     @GetMapping("/keyword/{keyword}")
     public KeywordResponse findByKeyword(@PathVariable String keyword){
-        return service.FindByKeyword(keyword);
+        return service.findByKeyword(keyword);
     }
 
     @GetMapping("/findAll")
     public List<KeywordResponse> findAll() {
-        return service.FindAll();
+        return service.findAll();
     }
 
     @GetMapping("/title/{title}")

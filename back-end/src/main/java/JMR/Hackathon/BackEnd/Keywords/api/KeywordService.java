@@ -29,7 +29,7 @@ public class KeywordService {
     private final KeywordDTOMapper mapperDTO;
 
 
-    public KeywordResponse FindById(Long id){
+    public KeywordResponse findById(Long id){
 
         return keywordRepository.findById(id)
                 .map(mapperDTO::ToResponse)
@@ -38,13 +38,13 @@ public class KeywordService {
     }
 
 
-    public KeywordResponse FindByKeyword(String k){
+    public KeywordResponse findByKeyword(String k){
 
         return keywordRepository.findByKeyword(k).map(mapperDTO::ToResponse)
                 .orElseThrow(()->new KeywordNotFoundException(k));
     }
 
-    public List<KeywordResponse> FindAll(){
+    public List<KeywordResponse> findAll(){
 
         return keywordRepository.findAll()
                 .stream()
