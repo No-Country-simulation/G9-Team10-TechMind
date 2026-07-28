@@ -110,16 +110,29 @@ public class DocumentService {
    }
 
     public DocumentResponse getDocumentById(Long id) {
+        Document d = documentRepository.FindById(id)
+                    .orElseThrow(()->new DocumentNotFoundException(id));
 
-       return documentRepository.FindById(id).map(dtoMapper::ToResponse)
-               .orElseThrow(()->new DocumentNotFoundException(id));
+        List<String> keywords = keywordRepository.findAllByDocumentId(d.getId())
+                .stream()
+                .map(Keyword::getKeyword)
+                .toList();
+
+        return dtoMapper.ToResponseWithKeywords(d, keywords);
 
     }
 
     public DocumentResponse getDocumentByTitle(String t){
 
-       return documentRepository.FindByTitle(t).map(dtoMapper::ToResponse)
+        Document d = documentRepository.FindByTitle(t)
                .orElseThrow(()->new DocumentNotFoundException(t));
+
+        List<String> keywords = keywordRepository.findAllByDocumentId(d.getId())
+                .stream()
+                .map(Keyword::getKeyword)
+                .toList();
+
+        return dtoMapper.ToResponseWithKeywords(d, keywords);
 
     }
 
@@ -146,21 +159,19 @@ public class DocumentService {
 
     public List<DocumentResponse> getDocumentByKeyword(String keyword) {
 
+        System.out.println("keyword: "+keyword);
+
         Keyword k = keywordRepository.findByKeyword(keyword)
                 .orElseThrow(() -> new KeywordNotFoundException(keyword));
 
         List<Long> dID = documentKeywordRepository.findDocumentIdsByKeywordId(k.getId());
 
-        List<DocumentResponse> responses = new ArrayList<>();
+        System.out.println("Lista de ids" + dID);
 
-        for (Long id : dID) {
-
-            Document find = documentRepository.FindById(id)
-                    .orElseThrow(()->new DocumentNotFoundException(id));
-
-            responses.add(dtoMapper.ToResponse(find));
-
-        }
+        List<DocumentResponse> responses = documentRepository.findAllById(dID)
+                .stream()
+                .map(dtoMapper::ToResponse)
+                .toList();
 
         return responses;
 

@@ -72,4 +72,12 @@ public class DocumentRepositoryImplements implements DocumentRepository {
 
         return jpaRepository.findByDocId(docId).map(mapper::ToDomain);
     }
+
+    @Override
+    public List<Document> findAllById(List<Long> ids) {
+        return jpaRepository.findAllById(ids)
+                .stream()
+                .map(mapper::ToDomain)
+                .toList();
+    }
 }

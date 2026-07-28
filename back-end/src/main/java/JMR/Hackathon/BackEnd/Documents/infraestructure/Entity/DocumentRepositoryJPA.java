@@ -22,4 +22,5 @@ public interface DocumentRepositoryJPA extends JpaRepository<DocumentEntity,Long
 
     Optional<DocumentEntity> findByDocId(String docId);
 
+
 }

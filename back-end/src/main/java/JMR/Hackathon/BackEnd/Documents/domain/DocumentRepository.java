@@ -21,4 +21,6 @@ public interface DocumentRepository {
 
     Optional<Document> findByDocId(String docId);
 
+    List<Document> findAllById(List<Long> ids);
+
 }

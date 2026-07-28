@@ -1,12 +1,13 @@
 package JMR.Hackathon.BackEnd.Keywords.infraestructure.Entity;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
+
 
 import java.util.List;
 import java.util.Optional;
 
-public interface KeywordRepositoryJPA extends CrudRepository<KeywordEntity, Long> {
+public interface KeywordRepositoryJPA extends JpaRepository<KeywordEntity, Long> {
 
 
     Optional<KeywordEntity> findById(Long id);
@@ -29,5 +30,4 @@ public interface KeywordRepositoryJPA extends CrudRepository<KeywordEntity, Long
         WHERE dk.documentId = :documentId
     """)
     List<KeywordEntity> findAllByDocumentId(Long documentId);
-
 }
