@@ -9,11 +9,17 @@ import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
 import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 @AllArgsConstructor
+@Transactional
 public class saveKeywords {
 
     private final KeywordRepository keywordRepository;
@@ -25,29 +31,41 @@ public class saveKeywords {
 
     public void save(Document s, List<String> keywords){
 
+        List<Keyword> allKeywords = keywordRepository.findAll();
+
+        Map<String, Keyword> keywordMap = allKeywords.stream()
+                .collect(Collectors.toMap(
+                        Keyword::getKeyword,
+                        Function.identity()
+                ));
+
+        List<DocumentKeyword> documentKeywords = new ArrayList<>();
+
+
         for (String keyword : keywords) {
 
             String normalizedKeyword = normalizer.normalize(keyword);
 
-            Keyword a = new Keyword();
-            a.setKeyword(normalizedKeyword);
+            Keyword keywordEntity = keywordMap.get(normalizedKeyword);
 
-            Keyword keywordEntity = keywordRepository.findByKeyword(normalizedKeyword)
-                    .orElseGet(() -> {
-                        Keyword k = new Keyword();
-                        k.setKeyword(normalizedKeyword);
-                        return keywordRepository.save(k).orElseThrow();
-                    });
+            if (keywordEntity == null) {
+                Keyword newKeyword = new Keyword();
+                newKeyword.setKeyword(normalizedKeyword);
+
+                keywordEntity = keywordRepository.save(newKeyword)
+                        .orElseThrow(() -> new IllegalStateException("error al guardar la keyword."));
+
+                keywordMap.put(normalizedKeyword, keywordEntity);
+            }
 
             DocumentKeyword documentKeyword = new DocumentKeyword();
             documentKeyword.setDocumentId(s.getId());
             documentKeyword.setKeywordId(keywordEntity.getId());
 
-            documentKeywordRepository.save(documentKeyword);
-
-
+            documentKeywords.add(documentKeyword);
 
         }
+        documentKeywordRepository.saveAll(documentKeywords);
 
     }
 

@@ -1,5 +1,6 @@
 package JMR.Hackathon.BackEnd.Keywords.infraestructure.Entity;
 
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
@@ -18,5 +19,15 @@ public interface KeywordRepositoryJPA extends CrudRepository<KeywordEntity, Long
     List<KeywordEntity> findAll();
 
     Boolean existsByKeyword(String keyword);
+
+
+    @Query("""
+        SELECT k
+        FROM KeywordEntity k
+        JOIN DocumentKeywordEntity dk
+            ON k.id = dk.keywordId
+        WHERE dk.documentId = :documentId
+    """)
+    List<KeywordEntity> findAllByDocumentId(Long documentId);
 
 }

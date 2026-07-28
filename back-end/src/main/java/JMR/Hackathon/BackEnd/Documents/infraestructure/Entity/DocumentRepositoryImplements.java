@@ -40,6 +40,11 @@ public class DocumentRepositoryImplements implements DocumentRepository {
                 .map(mapper::ToDomain);
     }
 
+    @Override
+    public Boolean existsByDocId(String docID) {
+        return jpaRepository.existsByDocId(docID);
+    }
+
 
     @Override
     public void delete(Long id) {
@@ -60,5 +65,11 @@ public class DocumentRepositoryImplements implements DocumentRepository {
                 .stream()
                 .map(mapper::ToDomain)
                 .toList();
+    }
+
+    @Override
+    public Optional<Document> findByDocId(String docId) {
+
+        return jpaRepository.findByDocId(docId).map(mapper::ToDomain);
     }
 }

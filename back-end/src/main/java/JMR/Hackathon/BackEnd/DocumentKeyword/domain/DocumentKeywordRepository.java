@@ -11,4 +11,7 @@ public interface DocumentKeywordRepository {
 
     List<Long> findDocumentIdsByKeywordId(Long keywordId);
 
+    void saveAll(List<DocumentKeyword> documentKeywords);
+
+
 }

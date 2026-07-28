@@ -38,18 +38,27 @@ public class FindAllTest {
     @InjectMocks
     private KeywordService service;
 
+
+    private final Long ID = 1L;
+
+    private static final String KEYWORD = "spring";
+
+    private final Long ID2 =2L;
+
+    private static final String KEYWORD2 = "docker";
+
     @Test
     void shouldReturnAllKeywords() {
 
-        Keyword keyword1 = new Keyword(1L, "spring");
+        Keyword keyword1 = new Keyword(ID, KEYWORD);
 
-        Keyword keyword2 = new Keyword(2L, "docker");
+        Keyword keyword2 = new Keyword(ID2, KEYWORD2);
 
         KeywordResponse response1 =
-                new KeywordResponse(1L, "spring");
+                new KeywordResponse(ID, KEYWORD);
 
         KeywordResponse response2 =
-                new KeywordResponse(2L, "docker");
+                new KeywordResponse(ID2, KEYWORD2);
 
         when(keywordRepository.findAll())
                 .thenReturn(List.of(keyword1, keyword2));
@@ -67,11 +76,11 @@ public class FindAllTest {
         KeywordResponse result1 = result.get(0);
         KeywordResponse result2 = result.get(1);
 
-        assertEquals(1L, result1.id());
-        assertEquals("spring", result1.keyword());
+        assertEquals(ID, result1.id());
+        assertEquals(KEYWORD, result1.keyword());
 
-        assertEquals(2L, result2.id());
-        assertEquals("docker", result2.keyword());
+        assertEquals(ID2, result2.id());
+        assertEquals(KEYWORD2, result2.keyword());
 
         verify(keywordRepository).findAll();
 

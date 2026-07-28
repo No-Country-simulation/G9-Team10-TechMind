@@ -40,26 +40,31 @@ public class FindByIdTest {
     @InjectMocks
     private KeywordService service;
 
+
+    private final Long ID = 1L;
+
+    private static final String KEYWORD = "spring";
+
     @Test
     void shouldReturnKeywordWhenIdExists() {
 
-        Keyword keyword = new Keyword(1L, "spring");
+        Keyword keyword = new Keyword(ID, KEYWORD);
 
         KeywordResponse response =
-                new KeywordResponse(1L, "spring");
+                new KeywordResponse(ID, KEYWORD);
 
-        when(keywordRepository.findById(1L))
+        when(keywordRepository.findById(ID))
                 .thenReturn(Optional.of(keyword));
 
         when(mapperDTO.ToResponse(keyword))
                 .thenReturn(response);
 
-        KeywordResponse result = service.findById(1L);
+        KeywordResponse result = service.findById(ID);
 
-        assertEquals(1L, result.id());
-        assertEquals("spring", result.keyword());
+        assertEquals(ID, result.id());
+        assertEquals(KEYWORD, result.keyword());
 
-        verify(keywordRepository).findById(1L);
+        verify(keywordRepository).findById(ID);
         verify(mapperDTO).ToResponse(keyword);
     }
 
@@ -67,15 +72,15 @@ public class FindByIdTest {
     @Test
     void shouldThrowExceptionWhenKeywordDoesNotExist() {
 
-        when(keywordRepository.findById(1L))
+        when(keywordRepository.findById(ID))
                 .thenReturn(Optional.empty());
 
         assertThrows(
                 KeywordNotFoundException.class,
-                () -> service.findById(1L)
+                () -> service.findById(ID)
         );
 
-        verify(keywordRepository).findById(1L);
+        verify(keywordRepository).findById(ID);
 
         verify(mapperDTO, never())
                 .ToResponse(any());

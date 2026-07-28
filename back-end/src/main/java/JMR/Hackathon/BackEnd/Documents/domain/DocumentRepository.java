@@ -10,12 +10,15 @@ public interface DocumentRepository {
     Optional<Document> FindById(Long id); //endpoint
 
     Optional<Document> FindByTitle(String title); //endpoint
-    // no endpoint
+
+    Boolean existsByDocId(String docID) ;
 
     void delete(Long id); //endpoint
 
     void deleteByTitle(String title);
 
-    List<Document> findAll(); //endpoint
+    List<Document> findAll();
+
+    Optional<Document> findByDocId(String docId);
 
 }

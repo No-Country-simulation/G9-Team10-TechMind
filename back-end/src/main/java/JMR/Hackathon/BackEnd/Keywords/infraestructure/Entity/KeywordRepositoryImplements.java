@@ -76,5 +76,13 @@ public class KeywordRepositoryImplements implements KeywordRepository {
 
     }
 
+    @Override
+    public List<Keyword> findAllByDocumentId(Long documentId) {
+        return jpaRepository.findAllByDocumentId(documentId)
+                .stream()
+                .map(mapper::ToDomain)
+                .toList();
+    }
+
 
 }

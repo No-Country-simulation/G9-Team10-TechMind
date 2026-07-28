@@ -42,40 +42,45 @@ public class DeleteByKeywordTest {
     private KeywordService service;
 
 
+    private final Long ID = 1L;
+
+    private static final String KEYWORD = "spring";
+
+
     @Test
     void shouldDeleteKeywordWhenKeywordExists() {
 
         // Arrange
-        Keyword keyword = new Keyword(1L, "spring");
+        Keyword keyword = new Keyword(ID, KEYWORD);
 
-        when(keywordRepository.findByKeyword("spring"))
+        when(keywordRepository.findByKeyword(KEYWORD))
                 .thenReturn(Optional.of(keyword));
 
-        doNothing().when(keywordRepository).deleteByKeyword("spring");
+        doNothing().when(keywordRepository).deleteByKeyword(KEYWORD);
 
         // Act
-        service.deleteByKeyword("spring");
+        service.deleteByKeyword(KEYWORD);
 
         // Verify
-        verify(keywordRepository).findByKeyword("spring");
-        verify(keywordRepository).deleteByKeyword("spring");
+        verify(keywordRepository).findByKeyword(KEYWORD);
+        verify(keywordRepository).deleteByKeyword(KEYWORD);
     }
 
     @Test
     void shouldThrowExceptionWhenKeywordDoesNotExist() {
 
         // Arrange
-        when(keywordRepository.findByKeyword("spring"))
+        when(keywordRepository.findByKeyword(KEYWORD))
                 .thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(
                 KeywordNotFoundException.class,
-                () -> service.deleteByKeyword("spring")
+                () -> service.deleteByKeyword(KEYWORD)
         );
 
         // Verify
-        verify(keywordRepository).findByKeyword("spring");
+        verify(keywordRepository).findByKeyword(KEYWORD);
         verify(keywordRepository, never()).deleteByKeyword(anyString());
     }
 

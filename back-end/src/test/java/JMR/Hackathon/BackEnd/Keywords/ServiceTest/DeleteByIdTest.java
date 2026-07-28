@@ -37,20 +37,24 @@ public class DeleteByIdTest {
     @InjectMocks
     private KeywordService service;
 
+    private final Long ID = 1L;
+
+    private static final String KEYWORD = "spring";
+
     @Test
     void shouldDeleteById()
     {
-        Keyword keyword = new Keyword(1L, "spring");
+        Keyword keyword = new Keyword(ID, KEYWORD);
 
-        when(keywordRepository.findById(1L))
+        when(keywordRepository.findById(ID))
                 .thenReturn(Optional.of(keyword));
 
-        doNothing().when(keywordRepository).deleteById(1L);
+        doNothing().when(keywordRepository).deleteById(ID);
 
-        service.deleteById(1L);
+        service.deleteById(ID);
 
-        verify(keywordRepository).findById(1L);
-        verify(keywordRepository).deleteById(1L);
+        verify(keywordRepository).findById(ID);
+        verify(keywordRepository).deleteById(ID);
 
     }
 
@@ -58,17 +62,17 @@ public class DeleteByIdTest {
     void shouldThrowExceptionWhenKeywordDoesNotExist() {
 
 
-        when(keywordRepository.findById(1L))
+        when(keywordRepository.findById(ID))
                 .thenReturn(Optional.empty());
 
 
         assertThrows(
                 KeywordNotFoundException.class,
-                () -> service.deleteById(1L)
+                () -> service.deleteById(ID)
         );
 
 
-        verify(keywordRepository).findById(1L);
+        verify(keywordRepository).findById(ID);
         verify(keywordRepository, never()).deleteById(anyLong());
     }
 }

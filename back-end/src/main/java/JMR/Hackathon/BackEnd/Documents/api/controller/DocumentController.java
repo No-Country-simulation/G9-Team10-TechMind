@@ -71,8 +71,6 @@ public class DocumentController {
     }
 
 
-
-
     @DeleteMapping("/id/{id}")
     public void deleteDocumentById(@PathVariable
                                        @Min(value = 1,message = "El ID debe ser mayor que 0")

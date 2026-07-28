@@ -1,6 +1,7 @@
 package JMR.Hackathon.BackEnd.Documents.api;
 
 
+import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeyword;
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
@@ -19,8 +20,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Service
@@ -48,7 +51,29 @@ public class DocumentService {
         // 1. Llamar al microservicio Python para analizar el texto
         AiAnalysisResponse aiResult = aiClient.analyze(request.title(), request.content());
 
-        // 2. Construir el dominio con los datos enriquecidos por la IA
+        // 2. verificar si no existe en db mediante DocId
+
+        Optional <Document> Doc = documentRepository.findByDocId(aiResult.docId());
+
+        if (Doc.isPresent()) {
+
+            Document document = Doc.get();
+
+
+            List<String> keywords = keywordRepository.findAllByDocumentId(document.getId())
+                    .stream()
+                    .map(Keyword::getKeyword)
+                    .toList();
+
+            return dtoMapper.ToResponseWithKeywords(document, keywords);
+        }
+
+
+
+
+        System.out.println("Lista desde create document: "+ aiResult.keywords());
+
+        // 3. Construir el dominio con los datos enriquecidos por la IA
         Document document = Document.builder()
                 .docID(aiResult.docId())
                 .trace_id(aiResult.traceId())
@@ -60,16 +85,16 @@ public class DocumentService {
                 .nivel(parseNivel(aiResult.nivel()))
                 .build();
 
-        // 3. Persistir el documento
+        // 4. Persistir el documento
         Document saved = documentRepository.save(document)
                 .orElseThrow(() -> new IllegalStateException("error al guardar el documento."));
 
-        // 4. Persistir las keywords extraídas por la IA
+        // 5. Persistir las keywords extraídas por la IA
         if (aiResult.keywords() != null && !aiResult.keywords().isEmpty()) {
             saveKeywords.save(saved, aiResult.keywords());
         }
 
-        // 5. Retornar la respuesta enriquecida con las keywords
+        // 6. Retornar la respuesta enriquecida con las keywords
 
         return dtoMapper.ToResponseWithKeywords(saved, aiResult.keywords());
     }

@@ -37,4 +37,6 @@ public class AiClient {
                 .retrieve()
                 .body(AiAnalysisResponse.class);
     }
+
+
 }

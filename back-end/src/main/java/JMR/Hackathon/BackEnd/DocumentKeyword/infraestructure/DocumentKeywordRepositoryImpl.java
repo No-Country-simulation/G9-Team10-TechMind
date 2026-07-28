@@ -6,6 +6,7 @@ import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,5 +45,17 @@ public class DocumentKeywordRepositoryImpl implements DocumentKeywordRepository 
 
 
         return jpaRepository.findDocumentIdsByKeywordId(keywordId);
+    }
+
+    @Override
+    public void saveAll(List<DocumentKeyword> documentKeywords) {
+
+        List<DocumentKeywordEntity> entities = documentKeywords.stream()
+                .map(mapper::ToEntity)
+                .toList();
+
+        jpaRepository.saveAll(entities);
+
+
     }
 }

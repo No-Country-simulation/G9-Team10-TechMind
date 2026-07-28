@@ -19,5 +19,7 @@ public interface KeywordRepository {
 
     Boolean existsByKeyword(String iKeyword);
 
+    List<Keyword> findAllByDocumentId(Long documentId);
+
 
 }
