@@ -3,11 +3,13 @@ from models.schemas import TextoInput, AnalisisResponse
 # from services import gemini_service
 
 import uuid
-from core.config import USE_MOCK
+from core import config
 
 import hashlib
 import re
+from core.logger import get_logger
 
+logger = get_logger(__name__)
 router = APIRouter()
 
 def generate_doc_id(text: str) -> str:
@@ -23,7 +25,10 @@ def analizar_texto(entrada: TextoInput):
     trace_id = str(uuid.uuid4())
     doc_id = entrada.doc_id if entrada.doc_id else generate_doc_id(entrada.texto)
     
-    if USE_MOCK:
+    logger.info(f"[Trace: {trace_id}] Iniciando análisis para documento doc_id={doc_id}")
+    
+    if config.USE_MOCK:
+        logger.info(f"[Trace: {trace_id}] Devolviendo respuesta MOCK (Sin coste)")
         return AnalisisResponse(
             Titulo=entrada.titulo,
             Texto=entrada.texto,
@@ -38,8 +43,10 @@ def analizar_texto(entrada: TextoInput):
         
     # Llamada real a Gemini (Fase 5.3)
     from services.gemini_service import extraer_metadata
+    logger.info(f"[Trace: {trace_id}] Solicitando clasificación a Gemini API...")
     metadata_gemini = extraer_metadata(entrada.texto)
     
+    logger.info(f"[Trace: {trace_id}] Análisis completado. Categoría asignada: {metadata_gemini.get('categoria')}")
     return AnalisisResponse(
         Titulo=entrada.titulo,
         Texto=entrada.texto,

@@ -2,6 +2,9 @@ import google.generativeai as genai
 import json
 from core.config import GEMINI_API_KEY
 from tenacity import retry, wait_exponential, stop_after_attempt
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Configurar API
 if GEMINI_API_KEY:
@@ -53,7 +56,7 @@ def extraer_metadata(texto_entrada: str):
         return json.loads(respuesta.text)
     except Exception as e:
         # Fallback de degradación elegante: Si Gemini falla, no rompemos el backend
-        print(f"[Error Gemini]: {str(e)}")
+        logger.error(f"Fallo crítico en Gemini API al analizar documento: {str(e)}")
         return {
             "categoria": "Desconocida",
             "probabilidad": 0.0,
