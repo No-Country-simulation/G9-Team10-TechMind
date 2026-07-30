@@ -3,8 +3,8 @@ from typing import List, Optional
 
 # --- CONTRATO DE ENTRADA ---
 class TextoInput(BaseModel):
-    titulo: str
-    texto: str
+    titulo: str = Field(..., max_length=500, description="Título del documento")
+    texto: str = Field(..., max_length=4000, description="Contenido a analizar (limitado por seguridad)")
     doc_id: Optional[str] = None
 
 class SearchRequest(BaseModel):
