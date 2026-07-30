@@ -8,7 +8,7 @@ Su objetivo es transformar el conjunto de datos original en un dataset consisten
 
 El resultado de este proceso constituye la entrada oficial para la siguiente fase del proyecto, donde se generan las representaciones vectoriales utilizadas por el motor de recuperación de información.
 
-Integrantes de la parte de datos: Nairobi Betancourt, Rodrigo Muñoz, Maximiliano Rodriguez
+Integrantes del equipo Data: Nairobi Betancourt, Rodrigo Muñoz, Maximiliano Rodriguez
 ---
 
 # Objetivos
