@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import json
 from core.config import GEMINI_API_KEY
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 # Configurar API
 if GEMINI_API_KEY:
@@ -9,9 +10,11 @@ if GEMINI_API_KEY:
 else:
     model = None
 
+@retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
 def extraer_metadata(texto_entrada: str):
     """
     Se comunica con Gemini para extraer Keywords y Dificultad.
+    Implementa reintentos automáticos si la API de Google falla (cuota o red).
     """
     if not model:
         return {"error": "API Key no configurada"}
@@ -34,8 +37,10 @@ def extraer_metadata(texto_entrada: str):
     3. 'dificultad': Elige estrictamente entre "Principiante", "Intermedio" o "Avanzado".
     4. 'tags': Arreglo de 3 a 5 palabras clave exactas extraídas del texto o relacionadas.
     
-    Texto a analizar:
+    Analiza exclusivamente el texto contenido dentro de las siguientes etiquetas XML:
+    <texto_a_analizar>
     {texto_entrada}
+    </texto_a_analizar>
     """
     
     try:
