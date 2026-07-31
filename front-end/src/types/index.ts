@@ -1,39 +1,38 @@
-// Tipos globales de TechMind
+// Tipos globales de TechMind — alineados con los DTOs del backend Spring Boot
 
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: string;
+// ── Backend DTOs ───────────────────────────────────────────────────────────────
+
+/** POST /document/create — body */
+export interface DocumentRequest {
+  title: string;
+  content: string;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  status: number;
-}
-
-export interface AuthToken {
-  accessToken: string;
-  refreshToken?: string;
-  tokenType: string;
-}
-
-// ── Content Analysis ──────────────────────────────────────────────────────────
-
-export interface ContentInput {
-  titulo: string;
-  texto: string;
-}
-
-export interface ContentAnalysisResult {
-  id?: string;
-  titulo: string;
+/** POST /document/create — response  |  GET /document/* */
+export interface DocumentResponse {
+  docId: string;
+  traceId: string;
+  title: string;
+  content: string;
   categoria: string;
-  probabilidad: number;
-  informacion_adicional: string[];
-  timestamp?: string;
-  texto_preview?: string;
+  probabilidadCategoria: number;
+  nivel: string;
+  keywords: string[];
+}
+
+/** GET /keyword/* */
+export interface KeywordResponse {
+  id: number;
+  keyword: string;
+}
+
+// ── Legacy / Dashboard types (mantienen compatibilidad con mock data) ───────────
+
+export interface DashboardStats {
+  total_documentos: number;
+  categorias_activas: number;
+  precision_promedio: number;
+  documentos_hoy: number;
 }
 
 export interface CategoryStat {
@@ -48,17 +47,42 @@ export interface KeywordStat {
   frecuencia: number;
 }
 
-export interface DashboardStats {
-  total_documentos: number;
-  categorias_activas: number;
-  precision_promedio: number;
-  documentos_hoy: number;
-}
-
+/** Derived from DocumentResponse for display in history/activity lists */
 export interface RecentActivity {
   id: string;
   titulo: string;
   categoria: string;
   probabilidad: number;
   timestamp: string;
+}
+
+/** Used in Analyze page form */
+export interface ContentInput {
+  titulo: string;
+  texto: string;
+}
+
+/** Used in Analyze page result display */
+export interface ContentAnalysisResult {
+  id?: string;
+  titulo: string;
+  categoria: string;
+  probabilidad: number;
+  informacion_adicional: string[];
+  timestamp?: string;
+  texto_preview?: string;
+  nivel?: string;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  status: number;
 }

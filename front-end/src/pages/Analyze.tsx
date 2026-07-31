@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings } from 'lucide-react';
-import { contentService } from '@/services/api';
-import { mockAnalysisResult, generateMockAnalysis } from '@/utils/mockData';
+import { documentService } from '@/services/api';
+import { generateMockAnalysis } from '@/utils/mockData';
 import { CATEGORY_COLORS } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import type { ContentInput, ContentAnalysisResult } from '@/types';
@@ -80,12 +80,27 @@ export function Analyze() {
     setResult(null);
 
     try {
-      const res = await contentService.analyze(input);
-      setResult(res);
+      // Llama a POST /document/create con el body { title, content }
+      const doc = await documentService.create({
+        title:   input.titulo,
+        content: input.texto,
+      });
+      // Mapea DocumentResponse → ContentAnalysisResult para el UI existente
+      setResult({
+        id:                    doc.docId,
+        titulo:                doc.title,
+        categoria:             doc.categoria,
+        probabilidad:          doc.probabilidadCategoria,
+        informacion_adicional: doc.keywords ?? [],
+        timestamp:             new Date().toISOString(),
+        texto_preview:         doc.content?.slice(0, 160) + (doc.content?.length > 160 ? '…' : ''),
+        nivel:                 doc.nivel,
+      });
     } catch {
-      // Demo fallback
-      await new Promise(r => setTimeout(r, 1200));
+      // Fallback a datos generados localmente cuando el backend no está disponible
+      await new Promise(r => setTimeout(r, 900));
       setResult(generateMockAnalysis(input.titulo, input.texto));
+      setError('⚠ Backend no disponible — resultado generado en modo demo.');
     } finally {
       setLoading(false);
     }
@@ -282,6 +297,35 @@ export function Analyze() {
                     </div>
                   </div>
                 )}
+
+                {/* Nivel (viene del backend real) */}
+                {result.nivel && (
+                  <div style={{ marginTop: 12 }}>
+                    <div className="section-label">Nivel de Dificultad</div>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginTop: 6,
+                      padding: '4px 12px',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      background: result.nivel === 'Avanzado'
+                        ? 'rgba(239,68,68,0.1)' : result.nivel === 'Intermedio'
+                        ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)',
+                      color: result.nivel === 'Avanzado'
+                        ? 'var(--clr-danger)' : result.nivel === 'Intermedio'
+                        ? 'var(--clr-warning)' : 'var(--clr-success)',
+                      border: result.nivel === 'Avanzado'
+                        ? '1px solid rgba(239,68,68,0.2)' : result.nivel === 'Intermedio'
+                        ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(16,185,129,0.2)',
+                    }}>
+                      {result.nivel}
+                    </span>
+                  </div>
+                )}
+
 
                 {/* Preview */}
                 {result.texto_preview && (

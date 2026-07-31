@@ -13,18 +13,22 @@ export const ROUTES = {
 
 // Endpoints del backend Spring Boot
 export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
+  DOCUMENT: {
+    CREATE:           '/document/create',
+    ALL:              '/document/all',
+    BY_ID:            '/document/id',
+    BY_TITLE:         '/document/title',
+    BY_KEYWORD:       '/document/keyword',
+    DELETE_BY_ID:     '/document/id',
+    DELETE_BY_TITLE:  '/document/title',
   },
-  CONTENT: {
-    ANALYZE: '/contenido',
-    HISTORY: '/contenido/history',
-    STATS: '/contenido/stats',
-    KEYWORDS: '/contenido/keywords',
-    CATEGORIES: '/contenido/categories',
-    BATCH: '/contenido/batch',
+  KEYWORD: {
+    ALL:              '/keyword/findAll',
+    BY_ID:            '/keyword/id',
+    BY_KEYWORD:       '/keyword/keyword',
+    BY_TITLE:         '/keyword/title',
+    DELETE_BY_ID:     '/keyword/id',
+    DELETE_BY_KEYWORD:'/keyword/keyword',
   },
 } as const;
 
