@@ -1,15 +1,13 @@
 /**
- * Servicio base de API — TechMind
+ * Servicio de API — TechMind
  * Todas las llamadas pasan por el proxy de Vite hacia Spring Boot en localhost:8080
+ * El proxy reescribe /api/* → /* en el backend.
  */
 
 import type {
-  ContentInput,
-  ContentAnalysisResult,
-  DashboardStats,
-  CategoryStat,
-  KeywordStat,
-  RecentActivity,
+  DocumentRequest,
+  DocumentResponse,
+  KeywordResponse,
 } from '@/types';
 import { API_ENDPOINTS } from '@/utils/constants';
 
@@ -34,11 +32,6 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     'Content-Type': 'application/json',
   };
 
-  const token = sessionStorage.getItem('token');
-  if (token) {
-    (defaultHeaders as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(url, {
     ...fetchOptions,
     headers: {
@@ -48,8 +41,14 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   });
 
   if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorBody}`);
+    let errorMsg = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      errorMsg += ': ' + (body.message ?? body.error ?? JSON.stringify(body));
+    } catch {
+      errorMsg += ': ' + await response.text().catch(() => '');
+    }
+    throw new Error(errorMsg);
   }
 
   if (response.status === 204) return null as T;
@@ -64,43 +63,125 @@ export const api = {
   post: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
     request<T>(endpoint, { method: 'POST', body: JSON.stringify(body), ...options }),
 
-  put: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
-    request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body), ...options }),
-
   delete: <T>(endpoint: string, options?: RequestOptions) =>
     request<T>(endpoint, { method: 'DELETE', ...options }),
 };
 
-// ── TechMind Domain Services ──────────────────────────────────────────────────
+// ── Document Service ──────────────────────────────────────────────────────────
 
+export const documentService = {
+  /**
+   * Crea / analiza un documento con IA.
+   * POST /document/create  →  { title, content }
+   */
+  create: (req: DocumentRequest) =>
+    api.post<DocumentResponse>(API_ENDPOINTS.DOCUMENT.CREATE, req),
+
+  /**
+   * Retorna todos los documentos almacenados.
+   * GET /document/all
+   */
+  getAll: () =>
+    api.get<DocumentResponse[]>(API_ENDPOINTS.DOCUMENT.ALL),
+
+  /**
+   * Busca un documento por su ID numérico.
+   * GET /document/id/{id}
+   */
+  getById: (id: number) =>
+    api.get<DocumentResponse>(`${API_ENDPOINTS.DOCUMENT.BY_ID}/${id}`),
+
+  /**
+   * Busca un documento por su título exacto.
+   * GET /document/title/{title}
+   */
+  getByTitle: (title: string) =>
+    api.get<DocumentResponse>(`${API_ENDPOINTS.DOCUMENT.BY_TITLE}/${encodeURIComponent(title)}`),
+
+  /**
+   * Retorna todos los documentos que contienen una keyword.
+   * GET /document/keyword/{keyword}
+   */
+  getByKeyword: (keyword: string) =>
+    api.get<DocumentResponse[]>(`${API_ENDPOINTS.DOCUMENT.BY_KEYWORD}/${encodeURIComponent(keyword)}`),
+
+  /**
+   * Elimina un documento por ID.
+   * DELETE /document/id/{id}
+   */
+  deleteById: (id: number) =>
+    api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_ID}/${id}`),
+
+  /**
+   * Elimina un documento por título.
+   * DELETE /document/title/{title}
+   */
+  deleteByTitle: (title: string) =>
+    api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_TITLE}/${encodeURIComponent(title)}`),
+};
+
+// ── Keyword Service ───────────────────────────────────────────────────────────
+
+export const keywordService = {
+  /**
+   * Retorna todas las keywords del sistema.
+   * GET /keyword/findAll
+   */
+  getAll: () =>
+    api.get<KeywordResponse[]>(API_ENDPOINTS.KEYWORD.ALL),
+
+  /**
+   * Busca una keyword por ID.
+   * GET /keyword/id/{id}
+   */
+  getById: (id: number) =>
+    api.get<KeywordResponse>(`${API_ENDPOINTS.KEYWORD.BY_ID}/${id}`),
+
+  /**
+   * Busca una keyword por su texto exacto.
+   * GET /keyword/keyword/{keyword}
+   */
+  getByKeyword: (keyword: string) =>
+    api.get<KeywordResponse>(`${API_ENDPOINTS.KEYWORD.BY_KEYWORD}/${encodeURIComponent(keyword)}`),
+
+  /**
+   * Retorna las keywords asociadas a un documento por su título.
+   * GET /keyword/title/{title}
+   */
+  getByTitle: (title: string) =>
+    api.get<KeywordResponse[]>(`${API_ENDPOINTS.KEYWORD.BY_TITLE}/${encodeURIComponent(title)}`),
+
+  /**
+   * Elimina una keyword por ID.
+   * DELETE /keyword/id/{id}
+   */
+  deleteById: (id: number) =>
+    api.delete<void>(`${API_ENDPOINTS.KEYWORD.DELETE_BY_ID}/${id}`),
+
+  /**
+   * Elimina una keyword por su texto.
+   * DELETE /keyword/keyword/{keyword}
+   */
+  deleteByKeyword: (keyword: string) =>
+    api.delete<void>(`${API_ENDPOINTS.KEYWORD.DELETE_BY_KEYWORD}/${encodeURIComponent(keyword)}`),
+};
+
+// ── contentService alias (backward compat con Analyze.tsx) ───────────────────
+
+/**
+ * Compatibilidad con el uso existente en Analyze.tsx.
+ * Traduce de ContentInput → DocumentRequest → DocumentResponse → ContentAnalysisResult.
+ */
 export const contentService = {
-  /**
-   * Analiza un contenido técnico y retorna clasificación + palabras clave
-   */
-  analyze: (input: ContentInput) =>
-    api.post<ContentAnalysisResult>(API_ENDPOINTS.CONTENT.ANALYZE, input),
-
-  /**
-   * Obtiene el historial de análisis
-   */
-  getHistory: (page = 0, size = 20) =>
-    api.get<RecentActivity[]>(API_ENDPOINTS.CONTENT.HISTORY, { params: { page, size } }),
-
-  /**
-   * Estadísticas generales del dashboard
-   */
-  getStats: () =>
-    api.get<DashboardStats>(API_ENDPOINTS.CONTENT.STATS),
-
-  /**
-   * Estadísticas por categoría
-   */
-  getCategories: () =>
-    api.get<CategoryStat[]>(API_ENDPOINTS.CONTENT.CATEGORIES),
-
-  /**
-   * Top palabras clave
-   */
-  getKeywords: (limit = 20) =>
-    api.get<KeywordStat[]>(API_ENDPOINTS.CONTENT.KEYWORDS, { params: { limit } }),
+  analyze: (input: { titulo: string; texto: string }) =>
+    documentService.create({ title: input.titulo, content: input.texto }).then(doc => ({
+      id:                    doc.docId,
+      titulo:                doc.title,
+      categoria:             doc.categoria,
+      probabilidad:          doc.probabilidadCategoria,
+      informacion_adicional: doc.keywords ?? [],
+      timestamp:             new Date().toISOString(),
+      texto_preview:         doc.content?.slice(0, 160) + (doc.content?.length > 160 ? '…' : ''),
+      nivel:                 doc.nivel,
+    })),
 };

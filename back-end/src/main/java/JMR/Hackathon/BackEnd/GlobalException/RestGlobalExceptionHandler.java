@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.util.stream.Collectors;
+import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentAlreadyExistsException;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.InvalidDocumentException;
@@ -63,6 +64,15 @@ public class RestGlobalExceptionHandler {
 
         return ResponseEntity.badRequest()
                 .body(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request));
+    }
+
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ErrorResponse> handleAiServiceException(
+            AiServiceException ex,
+            HttpServletRequest request) {
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(buildError(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request));
     }
 
     @ExceptionHandler(Exception.class)

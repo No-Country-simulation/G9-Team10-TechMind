@@ -14,9 +14,11 @@ import java.util.List;
 public class DocumentDTOMapper {
 
     // Convierte un Document de dominio a DocumentResponse sin keywords.
-    
+
     public DocumentResponse ToResponse(Document document) {
         return new DocumentResponse(
+                document.getDocID(),
+                document.getTrace_id(),
                 document.getTitle(),
                 document.getContent(),
                 document.getCategoria(),
@@ -27,9 +29,11 @@ public class DocumentDTOMapper {
     }
 
     // Convierte un Document de dominio a DocumentResponse incluyendo las keywords. Usado en el endpoint POST /create donde ya tenemos las keywords del análisis IA.
-     
+
     public DocumentResponse ToResponseWithKeywords(Document document, List<String> keywords) {
         return new DocumentResponse(
+                document.getDocID(),
+                document.getTrace_id(),
                 document.getTitle(),
                 document.getContent(),
                 document.getCategoria(),
