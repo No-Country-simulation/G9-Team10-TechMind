@@ -1,5 +1,10 @@
-# Fase 2 – Limpieza y Preparación de Datos
+> **Proyecto:** TechMind – Organización Inteligente del Conocimiento Técnico  
+> **Hackathon ONE G9 | Oracle Next Education + Alura Latam**
+> 
+> Integrantes del equipo Data: Nairobi Betancourt, Rodrigo Muñoz, Maximiliano Rodriguez  
 
+
+## Fase 2
 ## Descripción
 
 Esta fase corresponde al proceso de auditoría, limpieza, normalización y enriquecimiento del dataset utilizado por **TechMind**.
@@ -8,7 +13,6 @@ Su objetivo es transformar el conjunto de datos original en un dataset consisten
 
 El resultado de este proceso constituye la entrada oficial para la siguiente fase del proyecto, donde se generan las representaciones vectoriales utilizadas por el motor de recuperación de información.
 
-Integrantes del equipo Data: Nairobi Betancourt, Rodrigo Muñoz, Maximiliano Rodriguez
 ---
 
 # Objetivos
