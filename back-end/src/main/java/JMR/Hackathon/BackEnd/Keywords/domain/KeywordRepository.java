@@ -21,5 +21,7 @@ public interface KeywordRepository {
 
     List<Keyword> findAllByDocumentId(Long documentId);
 
+    List<Keyword> findAllById(List<Long> ids);
+
 
 }

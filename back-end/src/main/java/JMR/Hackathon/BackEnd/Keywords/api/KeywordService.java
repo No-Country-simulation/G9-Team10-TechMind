@@ -78,17 +78,14 @@ public class KeywordService {
 
         List<Long> kID  =documentKeywordRepository.findKeywordIdsByDocumentId(document.getId());
 
-        List<KeywordResponse> K = new ArrayList<>();
+        System.out.println(kID);
 
-        for(Long id : kID){
-
-            Keyword keyword = keywordRepository.findById(id)
-                    .orElseThrow(()->new KeywordNotFoundException(id));
-            K.add(mapperDTO.ToResponse(keyword));
-        }
+        List<KeywordResponse> K = keywordRepository.findAllById(kID)
+                .stream()
+                .map(mapperDTO::ToResponse)
+                .toList();
 
         return K;
-
 
 
     }
