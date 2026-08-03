@@ -61,7 +61,7 @@ public class DocumentController {
     }
 
     @GetMapping("/keyword/{keyword}")
-    public List<DocumentResponse> getDocumentByKeyword(@PathVariable
+    public List<DocumentResponse> getDocumentByKeyword(@PathVariable("keyword")
                                                            @NotBlank(message = "La keyword no puede estar vacía")
                                                            String Keyword) {
 

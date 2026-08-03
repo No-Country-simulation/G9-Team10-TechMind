@@ -3,6 +3,9 @@ package JMR.Hackathon.BackEnd.Keywords.ControllerTest;
 import JMR.Hackathon.BackEnd.Keywords.api.Dtos.KeywordResponse;
 import JMR.Hackathon.BackEnd.Keywords.api.KeywordService;
 import JMR.Hackathon.BackEnd.Keywords.api.controller.KeywordController;
+import JMR.Hackathon.BackEnd.Keywords.domain.exception.KeywordNotFoundException;
+import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -125,5 +128,102 @@ public class KeywordControllerTest {
         verify(service).deleteByKeyword("spring");
     }
 
+    // ─────────────────────────────────────────────
+    // Escenarios de error — GET /keyword/id/{id}
+    // ─────────────────────────────────────────────
 
+    @Test
+    @DisplayName("GET /keyword/id/{id} → 404 cuando la keyword no existe")
+    void shouldReturn404_whenKeywordByIdNotFound() throws Exception {
+        when(service.findById(99L)).thenThrow(new KeywordNotFoundException(99L));
+
+        mockMvc.perform(get("/keyword/id/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+
+        verify(service).findById(99L);
+    }
+
+    // ─────────────────────────────────────────────
+    // Escenarios de error — GET /keyword/keyword/{keyword}
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /keyword/keyword/{keyword} → 404 cuando la keyword no existe")
+    void shouldReturn404_whenKeywordByNameNotFound() throws Exception {
+        when(service.findByKeyword("rust")).thenThrow(new KeywordNotFoundException("rust"));
+
+        mockMvc.perform(get("/keyword/keyword/rust"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Keyword not found: rust"));
+
+        verify(service).findByKeyword("rust");
+    }
+
+    // ─────────────────────────────────────────────
+    // Escenarios de error — GET /keyword/title/{title}
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /keyword/title/{title} → 404 cuando el documento no existe")
+    void shouldReturn404_whenDocumentByTitleNotFound() throws Exception {
+        when(service.getKeywordsByTitle("Titulo Inexistente"))
+                .thenThrow(new DocumentNotFoundException("Titulo Inexistente"));
+
+        mockMvc.perform(get("/keyword/title/Titulo Inexistente"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+
+        verify(service).getKeywordsByTitle("Titulo Inexistente");
+    }
+
+    // ─────────────────────────────────────────────
+    // Escenarios de error — DELETE /keyword/id/{id}
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("DELETE /keyword/id/{id} → 404 cuando la keyword no existe")
+    void shouldReturn404_whenDeleteByIdNotFound() throws Exception {
+        doThrow(new KeywordNotFoundException(99L)).when(service).deleteById(99L);
+
+        mockMvc.perform(delete("/keyword/id/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+
+        verify(service).deleteById(99L);
+    }
+
+    // ─────────────────────────────────────────────
+    // Escenarios de error — DELETE /keyword/keyword/{keyword}
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("DELETE /keyword/keyword/{keyword} → 404 cuando la keyword no existe")
+    void shouldReturn404_whenDeleteByKeywordNotFound() throws Exception {
+        doThrow(new KeywordNotFoundException("cobol")).when(service).deleteByKeyword("cobol");
+
+        mockMvc.perform(delete("/keyword/keyword/cobol"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Keyword not found: cobol"));
+
+        verify(service).deleteByKeyword("cobol");
+    }
+
+    // ─────────────────────────────────────────────
+    // GET /keyword/findAll — lista vacía
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /keyword/findAll → 200 con lista vacía cuando no hay keywords")
+    void shouldReturn200WithEmptyList_whenNoKeywordsExist() throws Exception {
+        when(service.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/keyword/findAll"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        verify(service).findAll();
+    }
 }
