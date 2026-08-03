@@ -12,6 +12,7 @@ import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.Hasher;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
+import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
 import JMR.Hackathon.BackEnd.Keywords.domain.KeywordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,26 +44,21 @@ class DocumentServiceGetTest {
     private DocumentService service;
 
     // ─────────────────────────────────────────────
-    // Helper
+    // Helpers
     // ─────────────────────────────────────────────
 
     private Document buildDocument(Long id, String title) {
         return Document.builder()
-                .id(id)
-                .docID("doc-" + id)
-                .title(title)
-                .content("Contenido de prueba.")
-                .Categoria("Tecnología")
-                .probabilidadCategoria(0.88f)
-                .nivel(Nivel.Intermedio)
+                .id(id).docID("doc-" + id).title(title)
+                .content("Contenido.").Categoria("Tech")
+                .probabilidadCategoria(0.88f).nivel(Nivel.Intermedio)
                 .build();
     }
 
     private DocumentResponse buildResponse(Long id, String title) {
         return new DocumentResponse(
-                "doc-" + id, "trace-" + id,
-                title, "Contenido de prueba.",
-                "Tecnología", 0.88f, "Intermedio",
+                "doc-" + id, "trace-" + id, title,
+                "Contenido.", "Tech", 0.88f, "Intermedio",
                 Collections.emptyList()
         );
     }
@@ -72,20 +68,41 @@ class DocumentServiceGetTest {
     // ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("getDocumentById() con ID existente → retorna DocumentResponse")
+    @DisplayName("getDocumentById() con ID existente → retorna DocumentResponse con keywords")
     void shouldReturnDocument_whenIdExists() {
         Document doc = buildDocument(1L, "Spring Boot");
         DocumentResponse expected = buildResponse(1L, "Spring Boot");
+        Keyword kw = new Keyword(10L, "spring");
 
         when(documentRepository.FindById(1L)).thenReturn(Optional.of(doc));
-        when(dtoMapper.ToResponse(doc)).thenReturn(expected);
+        // El service ahora llama findAllByDocumentId para las keywords
+        when(keywordRepository.findAllByDocumentId(1L)).thenReturn(List.of(kw));
+        when(dtoMapper.ToResponseWithKeywords(eq(doc), eq(List.of("spring"))))
+                .thenReturn(expected);
 
         DocumentResponse result = service.getDocumentById(1L);
 
         assertEquals("doc-1", result.docId());
         assertEquals("Spring Boot", result.title());
         verify(documentRepository).FindById(1L);
-        verify(dtoMapper).ToResponse(doc);
+        verify(keywordRepository).findAllByDocumentId(1L);
+        verify(dtoMapper).ToResponseWithKeywords(eq(doc), eq(List.of("spring")));
+    }
+
+    @Test
+    @DisplayName("getDocumentById() con ID existente y sin keywords → retorna respuesta con lista vacía")
+    void shouldReturnDocument_withEmptyKeywords_whenIdExists() {
+        Document doc = buildDocument(2L, "Docker");
+        DocumentResponse expected = buildResponse(2L, "Docker");
+
+        when(documentRepository.FindById(2L)).thenReturn(Optional.of(doc));
+        when(keywordRepository.findAllByDocumentId(2L)).thenReturn(Collections.emptyList());
+        when(dtoMapper.ToResponseWithKeywords(eq(doc), eq(Collections.emptyList())))
+                .thenReturn(expected);
+
+        DocumentResponse result = service.getDocumentById(2L);
+
+        assertEquals("Docker", result.title());
     }
 
     @Test
@@ -106,29 +123,32 @@ class DocumentServiceGetTest {
     // ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("getDocumentByTitle() con título existente → retorna DocumentResponse")
+    @DisplayName("getDocumentByTitle() con título existente → retorna DocumentResponse con keywords")
     void shouldReturnDocument_whenTitleExists() {
-        Document doc = buildDocument(2L, "Docker Avanzado");
-        DocumentResponse expected = buildResponse(2L, "Docker Avanzado");
+        Document doc = buildDocument(3L, "Kubernetes");
+        DocumentResponse expected = buildResponse(3L, "Kubernetes");
+        Keyword kw = new Keyword(20L, "k8s");
 
-        when(documentRepository.FindByTitle("Docker Avanzado")).thenReturn(Optional.of(doc));
-        when(dtoMapper.ToResponse(doc)).thenReturn(expected);
+        when(documentRepository.FindByTitle("Kubernetes")).thenReturn(Optional.of(doc));
+        when(keywordRepository.findAllByDocumentId(3L)).thenReturn(List.of(kw));
+        when(dtoMapper.ToResponseWithKeywords(eq(doc), eq(List.of("k8s"))))
+                .thenReturn(expected);
 
-        DocumentResponse result = service.getDocumentByTitle("Docker Avanzado");
+        DocumentResponse result = service.getDocumentByTitle("Kubernetes");
 
-        assertEquals("Docker Avanzado", result.title());
-        verify(documentRepository).FindByTitle("Docker Avanzado");
+        assertEquals("Kubernetes", result.title());
+        verify(documentRepository).FindByTitle("Kubernetes");
     }
 
     @Test
     @DisplayName("getDocumentByTitle() con título inexistente → lanza DocumentNotFoundException")
     void shouldThrow_whenTitleDoesNotExist() {
-        when(documentRepository.FindByTitle("Titulo Inexistente")).thenReturn(Optional.empty());
+        when(documentRepository.FindByTitle("Inexistente")).thenReturn(Optional.empty());
 
         DocumentNotFoundException ex = assertThrows(DocumentNotFoundException.class,
-                () -> service.getDocumentByTitle("Titulo Inexistente"));
+                () -> service.getDocumentByTitle("Inexistente"));
 
-        assertTrue(ex.getMessage().contains("Titulo Inexistente"));
+        assertTrue(ex.getMessage().contains("Inexistente"));
         verifyNoInteractions(dtoMapper);
     }
 

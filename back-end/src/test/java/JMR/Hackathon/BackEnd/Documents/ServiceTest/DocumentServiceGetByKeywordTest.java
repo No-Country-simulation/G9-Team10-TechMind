@@ -9,7 +9,6 @@ import JMR.Hackathon.BackEnd.Documents.api.saveKeywords;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
-import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.Hasher;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
 import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
@@ -58,8 +57,12 @@ class DocumentServiceGetByKeywordTest {
                 Collections.emptyList());
     }
 
+    // ─────────────────────────────────────────────
+    // Escenario 1 — keyword con documentos
+    // ─────────────────────────────────────────────
+
     @Test
-    @DisplayName("getDocumentByKeyword() con keyword existente y documentos → retorna lista de respuestas")
+    @DisplayName("getDocumentByKeyword() con keyword existente → retorna lista de respuestas")
     void shouldReturnDocuments_whenKeywordExistsAndHasDocuments() {
         Keyword kw = new Keyword(10L, "java");
         Document doc1 = buildDocument(1L, "Java Basics");
@@ -68,9 +71,11 @@ class DocumentServiceGetByKeywordTest {
         DocumentResponse res2 = buildResponse(2L, "Java Avanzado");
 
         when(keywordRepository.findByKeyword("java")).thenReturn(Optional.of(kw));
-        when(documentKeywordRepository.findDocumentIdsByKeywordId(10L)).thenReturn(List.of(1L, 2L));
-        when(documentRepository.FindById(1L)).thenReturn(Optional.of(doc1));
-        when(documentRepository.FindById(2L)).thenReturn(Optional.of(doc2));
+        when(documentKeywordRepository.findDocumentIdsByKeywordId(10L))
+                .thenReturn(List.of(1L, 2L));
+        // El service ahora usa documentRepository.findAllById()
+        when(documentRepository.findAllById(List.of(1L, 2L)))
+                .thenReturn(List.of(doc1, doc2));
         when(dtoMapper.ToResponse(doc1)).thenReturn(res1);
         when(dtoMapper.ToResponse(doc2)).thenReturn(res2);
 
@@ -81,7 +86,12 @@ class DocumentServiceGetByKeywordTest {
         assertEquals("Java Avanzado", result.get(1).title());
         verify(keywordRepository).findByKeyword("java");
         verify(documentKeywordRepository).findDocumentIdsByKeywordId(10L);
+        verify(documentRepository).findAllById(List.of(1L, 2L));
     }
+
+    // ─────────────────────────────────────────────
+    // Escenario 2 — keyword inexistente
+    // ─────────────────────────────────────────────
 
     @Test
     @DisplayName("getDocumentByKeyword() con keyword inexistente → lanza KeywordNotFoundException")
@@ -95,33 +105,25 @@ class DocumentServiceGetByKeywordTest {
         verifyNoInteractions(documentKeywordRepository, documentRepository, dtoMapper);
     }
 
+    // ─────────────────────────────────────────────
+    // Escenario 3 — keyword sin documentos
+    // ─────────────────────────────────────────────
+
     @Test
-    @DisplayName("getDocumentByKeyword() con keyword existente pero sin documentos → retorna lista vacía")
+    @DisplayName("getDocumentByKeyword() con keyword sin documentos → retorna lista vacía")
     void shouldReturnEmpty_whenKeywordHasNoDocuments() {
         Keyword kw = new Keyword(5L, "haskell");
 
         when(keywordRepository.findByKeyword("haskell")).thenReturn(Optional.of(kw));
-        when(documentKeywordRepository.findDocumentIdsByKeywordId(5L)).thenReturn(Collections.emptyList());
+        when(documentKeywordRepository.findDocumentIdsByKeywordId(5L))
+                .thenReturn(Collections.emptyList());
+        when(documentRepository.findAllById(Collections.emptyList()))
+                .thenReturn(Collections.emptyList());
 
         List<DocumentResponse> result = service.getDocumentByKeyword("haskell");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verifyNoInteractions(documentRepository, dtoMapper);
-    }
-
-    @Test
-    @DisplayName("getDocumentByKeyword() cuando uno de los documentos no existe → lanza DocumentNotFoundException")
-    void shouldThrow_whenDocumentInListDoesNotExist() {
-        Keyword kw = new Keyword(7L, "docker");
-
-        when(keywordRepository.findByKeyword("docker")).thenReturn(Optional.of(kw));
-        when(documentKeywordRepository.findDocumentIdsByKeywordId(7L)).thenReturn(List.of(1L, 99L));
-        when(documentRepository.FindById(1L)).thenReturn(Optional.of(buildDocument(1L, "Docker Intro")));
-        when(documentRepository.FindById(99L)).thenReturn(Optional.empty());
-        when(dtoMapper.ToResponse(any())).thenReturn(buildResponse(1L, "Docker Intro"));
-
-        assertThrows(DocumentNotFoundException.class,
-                () -> service.getDocumentByKeyword("docker"));
+        verifyNoInteractions(dtoMapper);
     }
 }
