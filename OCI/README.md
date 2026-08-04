@@ -1,8 +1,8 @@
 <div align="center">
   
-# ☁️ TechMind Cloud Infrastructure (OCI)
+# ☁️ TechMind Infraestructura Cloud (OCI)
 
-**Enterprise-Grade Zero-Trust Architecture deployed on Oracle Cloud Infrastructure**
+**Arquitectura de Grado Enterprise Zero-Trust Desplegada en Oracle Cloud Infrastructure**
 
 <p align="center">
   <img src="https://img.shields.io/badge/Oracle_Cloud-F80000?style=for-the-badge&logo=oracle&logoColor=white" alt="Oracle Cloud" />
@@ -15,59 +15,59 @@
 
 </div>
 
-## 🎯 OVERVIEW
+## 🎯 RESUMEN GENERAL
 
-The TechMind Cloud Infrastructure repository contains the architectural blueprints and configurations for deploying a highly secure, multi-tier application environment on Oracle Cloud Infrastructure (OCI). Designed to support a React frontend, a Spring Boot API Gateway, and a heavy-compute FastAPI AI engine, this infrastructure solves the common pitfalls of cloud deployments by prioritizing strict network isolation and identity-based access control.
+El repositorio de Infraestructura Cloud de TechMind contiene los planos arquitectónicos y configuraciones para desplegar un entorno de aplicaciones multi-capa altamente seguro en Oracle Cloud Infrastructure (OCI). Diseñado para soportar un frontend en React, un API Gateway en Spring Boot y un motor de IA intensivo en FastAPI, esta infraestructura resuelve las fallas comunes de los despliegues en la nube priorizando un aislamiento de red estricto y control de acceso basado en identidad.
 
-By leveraging OCI's Ampere A1 Compute instances and implementing a strict Zero-Trust network topology, the system ensures that critical data and machine learning workloads remain completely isolated from the public internet while maximizing cost-efficiency through the OCI Always Free/PAYG tier.
+Al aprovechar las instancias ARM Ampere A1 de OCI e implementar una topología de red Zero-Trust, el sistema garantiza que los datos críticos y las cargas de trabajo de Machine Learning permanezcan completamente aislados del internet público, maximizando la eficiencia de costos a través de la capa Always Free / PAYG de OCI.
 
-## 🏆 ENTERPRISE SUCCESS CRITERIA
+## 🏆 CRITERIOS DE ÉXITO ARQUITECTÓNICO
 
-- **Zero-Trust Network Topology:** Segregation of workloads into Public and Private Subnets. Only the Spring Boot API Gateway is exposed to the internet. The AI Engine (FastAPI) and the MySQL Database reside in a Private Subnet without public IP addresses, effectively shielding them from external threat actors.
-- **Identity & Access Management (IAM):** Eradication of hardcoded credentials via OCI Dynamic Groups and Instance Principals. The AI Engine is granted autonomous read-access to Object Storage models purely through cryptographic machine-identity policies.
-- **Cost-Optimized High Performance:** Strategic allocation of ARM Ampere A1 compute resources (4 OCPUs, 24GB RAM total) to handle heavy Scikit-Learn matrix computations natively in memory without incurring operational costs.
-- **Secure Egress Traffic:** Implementation of a NAT Gateway allowing private instances to securely fetch OS updates and Python packages without exposing ingress endpoints.
-- **Bastion Host Architecture:** Secure administrative access to private instances is achieved exclusively via SSH Jump routing through the public API Gateway.
+- **Topología de Red Zero-Trust:** Segregación de cargas de trabajo en subredes Públicas y Privadas. Solo el API Gateway (Spring Boot) está expuesto a internet. El Motor de IA (FastAPI) y la Base de Datos MySQL residen en una subred privada sin direcciones IP públicas, blindándolos efectivamente contra atacantes externos.
+- **Gestión de Identidad y Accesos (IAM):** Erradicación de credenciales en texto plano (hardcodeadas) mediante Grupos Dinámicos y *Instance Principals* de OCI. El motor de IA recibe acceso autónomo de lectura a los modelos en *Object Storage* mediante políticas criptográficas de identidad de máquina.
+- **Alto Rendimiento Optimizado en Costos:** Asignación estratégica de recursos ARM Ampere A1 (4 OCPUs, 24GB RAM total) para procesar matrices complejas de Scikit-Learn de manera nativa en memoria sin incurrir en costos operativos.
+- **Tráfico de Salida Seguro (Egress):** Implementación de un NAT Gateway que permite a las instancias privadas descargar de forma segura actualizaciones del OS y paquetes de Python sin exponer sus puertos de entrada a internet.
+- **Arquitectura Bastion Host:** El acceso administrativo seguro a las instancias privadas se logra exclusivamente mediante saltos SSH (Jump) enrutados a través del API Gateway público.
 
 ## 🛠️ TECH STACK
 
-**Cloud Provider:** Oracle Cloud Infrastructure (OCI)  
-**Compute:** VM.Standard.A1.Flex (ARM Ampere), Canonical Ubuntu 24.04 LTS  
-**Networking:** Virtual Cloud Network (VCN), Internet Gateway, NAT Gateway, Public/Private Subnets, Security Lists  
-**Storage:** OCI Object Storage (Public Frontend Bucket, Private AI Models Bucket)  
-**Security:** IAM Policies, Dynamic Groups, Instance Principals, Bastion Host SSH  
-**Workloads:** Spring Boot (Java 17+), FastAPI (Python 3.12), MySQL Server  
+**Proveedor Cloud:** Oracle Cloud Infrastructure (OCI)  
+**Cómputo:** VM.Standard.A1.Flex (ARM Ampere), Canonical Ubuntu 24.04 LTS  
+**Redes:** Virtual Cloud Network (VCN), Internet Gateway, NAT Gateway, Subredes Públicas/Privadas, Security Lists  
+**Almacenamiento:** OCI Object Storage (Bucket Público para Frontend, Bucket Privado para Modelos de IA)  
+**Seguridad:** IAM Policies, Grupos Dinámicos, Instance Principals, SSH via Bastion Host  
+**Cargas de Trabajo:** Spring Boot (Java 17+), FastAPI (Python 3.12), Servidor MySQL  
 
-## 📦 LOCAL SETUP / QUICKSTART
+## 📦 INSTALACIÓN LOCAL / GUÍA RÁPIDA
 
-This infrastructure was provisioned via OCI Console following a strict runbook. To replicate or access this environment, follow these administrative steps:
+Esta infraestructura fue aprovisionada en la consola de OCI siguiendo un manual estricto. Para replicar o acceder a este entorno, sigue estos pasos administrativos:
 
-1. **Access the Public API Gateway (Bastion Host):**
-   Ensure you have the private SSH key securely stored locally.
+1. **Acceso al API Gateway Público (Bastion Host):**
+   Asegúrate de tener la llave SSH privada guardada localmente de forma segura.
    ```bash
-   ssh -i /path/to/public-vm-key.key ubuntu@<PUBLIC_IP>
+   ssh -i /ruta/a/tu-llave-publica.key ubuntu@<IP_PUBLICA>
    ```
 
-2. **Access Private Resources (Database & AI Engine):**
-   Utilize the Bastion Host to securely jump into the private subnet.
+2. **Acceso a Recursos Privados (Base de Datos y Motor de IA):**
+   Utiliza el Bastion Host para realizar un salto seguro (Jump) a la subred privada.
    ```bash
-   # 1. Securely transfer the private subnet key to the Bastion
-   scp -i /path/to/public-vm-key.key /path/to/private-vm-key.key ubuntu@<PUBLIC_IP>:/home/ubuntu/
+   # 1. Transfiere la llave de la máquina privada hacia el Bastion Host
+   scp -i /ruta/a/tu-llave-publica.key /ruta/a/tu-llave-privada.key ubuntu@<IP_PUBLICA>:/home/ubuntu/
 
-   # 2. Connect to the Bastion
-   ssh -i /path/to/public-vm-key.key ubuntu@<PUBLIC_IP>
+   # 2. Conéctate al Bastion Host
+   ssh -i /ruta/a/tu-llave-publica.key ubuntu@<IP_PUBLICA>
 
-   # 3. Restrict key permissions and Jump
-   chmod 600 private-vm-key.key
-   ssh -i private-vm-key.key ubuntu@<PRIVATE_IP>
+   # 3. Restringe permisos de la llave y da el salto (Jump)
+   chmod 600 tu-llave-privada.key
+   ssh -i tu-llave-privada.key ubuntu@<IP_PRIVADA>
    ```
 
-3. **Service Management (systemd):**
-   All core applications are managed via Linux `systemd` to ensure automatic restarts and high availability.
+3. **Gestión de Servicios (systemd):**
+   Todas las aplicaciones principales son administradas mediante `systemd` de Linux para garantizar reinicios automáticos y alta disponibilidad.
    ```bash
-   # Check API status
+   # Revisar estado de la API
    sudo systemctl status techmind-api
    
-   # Check Database status
+   # Revisar estado de la Base de Datos
    sudo systemctl status mysql
    ```
