@@ -24,6 +24,13 @@ public class AiClient {
                 .build();
     }
 
+    /** Constructor para tests — permite inyectar un RestClient.Builder
+     * ya configurado con un MockRestServiceServer.
+     */
+    public AiClient(RestClient.Builder builder) {
+        this.restClient = builder.build();
+    }
+
     /**
      * Llama a POST /api/v1/analyze del microservicio Python.
      * Retorna la clasificación, probabilidad, nivel y keywords del texto.
