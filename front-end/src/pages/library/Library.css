@@ -406,38 +406,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-.kw-alpha-filter {
-  padding: 16px 24px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-}
-
-.kw-alpha-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--clr-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.kw-alpha-btn:hover {
-  background: var(--clr-surface-hover);
-  color: var(--clr-text);
-}
-
-.kw-alpha-btn.active {
-  background: var(--clr-primary);
-  color: white;
-  border-color: var(--clr-primary);
-  box-shadow: var(--shadow-sm);
-}
-
 @media (max-width: 1100px) {
   .kw-page-grid { grid-template-columns: 1fr; }
 }

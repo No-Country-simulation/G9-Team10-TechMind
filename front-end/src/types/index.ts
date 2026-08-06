@@ -26,6 +26,19 @@ export interface KeywordResponse {
   keyword: string;
 }
 
+export interface DocumentoSimilitudResponse {
+  doc_id: string;
+  title: string;
+  source_type: string;
+  similarity_score: number;
+  preview: string;
+}
+
+export interface RecommendResponse {
+  resultados: DocumentoSimilitudResponse[];
+  trace_id: string;
+}
+
 // ── Legacy / Dashboard types (mantienen compatibilidad con mock data) ───────────
 
 export interface DashboardStats {

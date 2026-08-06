@@ -1,0 +1,246 @@
+/* ── Utilidades compartidas ───────────────────────── */
+
+.fade-delay {
+  animation-delay: var(--delay, 0s);
+}
+
+/* Elementos con color dinámico vía --accent-color */
+.accent-bg {
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+}
+
+.accent-bg-soft {
+  background: color-mix(in srgb, var(--accent-color) 8%, transparent);
+}
+
+.accent-bg-icon {
+  background: color-mix(in srgb, var(--accent-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+
+.accent-text {
+  color: var(--accent-color);
+}
+
+.accent-border {
+  border-color: color-mix(in srgb, var(--accent-color) 25%, transparent);
+}
+
+.cat-badge-colored {
+  background: color-mix(in srgb, var(--accent-color) 8%, transparent);
+  color: var(--accent-color);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 16%, transparent);
+}
+
+.category-dot-colored {
+  background: var(--accent-color);
+}
+
+.category-bar-colored {
+  background: var(--accent-color);
+  width: var(--bar-width, 0%);
+}
+
+.mini-bar-colored {
+  width: var(--bar-width, 0%);
+  background: var(--accent-color);
+}
+
+.stat-glow-colored {
+  background: var(--accent-color);
+}
+
+/* Iconos */
+.icon-primary { color: var(--clr-primary); }
+.icon-secondary { color: var(--clr-secondary); }
+.icon-inline { display: inline; margin-right: 5px; }
+.icon-clock-inline { display: inline; margin-right: 3px; }
+
+/* Estados de página */
+.page-loading,
+.page-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--clr-text-muted);
+}
+
+.page-empty-lg {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--clr-text-muted);
+}
+
+.page-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.page-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--clr-text);
+}
+
+.page-empty-text {
+  font-size: 0.85rem;
+}
+
+.page-empty-link {
+  color: var(--clr-primary);
+}
+
+.page-error {
+  color: var(--clr-danger);
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+}
+
+/* Banner demo */
+.demo-banner {
+  margin-bottom: 20px;
+}
+
+.demo-banner-action {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--clr-warning);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.demo-banner-action--filled {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  font-size: 0.75rem;
+}
+
+/* Botones icono */
+.icon-btn-danger {
+  background: none;
+  border: none;
+  color: var(--clr-danger);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity var(--transition);
+}
+
+.icon-btn-danger:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.icon-btn-danger:disabled {
+  color: var(--clr-text-muted);
+  cursor: not-allowed;
+}
+
+.icon-btn-danger--sm {
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.5;
+}
+
+/* Celdas tabla */
+.td-muted {
+  color: var(--clr-text-muted);
+  font-size: 0.78rem;
+}
+
+.td-keywords {
+  margin-top: 3px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.keyword-mini-tag {
+  font-size: 0.65rem;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--clr-text-muted);
+}
+
+/* Confianza / barras */
+.confidence-bar {
+  width: var(--bar-width, 0%);
+}
+
+.confidence-bar--high { background: var(--grad-success); }
+.confidence-bar--medium { background: var(--grad-warning); }
+.confidence-bar--low { background: var(--grad-danger); }
+
+/* Nivel badges */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.level-badge--advanced {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--clr-danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.level-badge--intermediate {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--clr-warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.level-badge--beginner {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--clr-success);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* Chart tooltip */
+.chart-tooltip {
+  background: var(--clr-bg-2);
+  border: 1px solid var(--clr-border-strong);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.78rem;
+}
+
+.chart-tooltip-label {
+  color: var(--clr-text-muted);
+  margin-bottom: 6px;
+}
+
+.chart-tooltip-value {
+  font-weight: 700;
+}
+
+/* Keyword chips dinámicos */
+.keyword-chip-sized {
+  font-size: var(--chip-size, 0.75rem);
+  background: color-mix(in srgb, var(--clr-primary) calc(var(--chip-alpha, 0.12) * 100%), transparent);
+  border-color: color-mix(in srgb, var(--clr-primary) calc(var(--chip-alpha, 0.12) * 250%), transparent);
+}
+
+.keyword-chip-sized.is-highlight {
+  color: var(--clr-primary);
+}
+
+.keyword-chip-sized:not(.is-highlight) {
+  color: var(--clr-text-subtle);
+}

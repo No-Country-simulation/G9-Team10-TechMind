@@ -8,6 +8,7 @@ import type {
   DocumentRequest,
   DocumentResponse,
   KeywordResponse,
+  RecommendResponse,
 } from '@/types';
 import { API_ENDPOINTS } from '@/utils/constants';
 
@@ -85,10 +86,10 @@ export const documentService = {
     api.get<DocumentResponse[]>(API_ENDPOINTS.DOCUMENT.ALL),
 
   /**
-   * Busca un documento por su ID numérico.
+   * Busca un documento por su ID.
    * GET /document/id/{id}
    */
-  getById: (id: number) =>
+  getById: (id: string) =>
     api.get<DocumentResponse>(`${API_ENDPOINTS.DOCUMENT.BY_ID}/${id}`),
 
   /**
@@ -109,7 +110,7 @@ export const documentService = {
    * Elimina un documento por ID.
    * DELETE /document/id/{id}
    */
-  deleteById: (id: number) =>
+  deleteById: (id: string) =>
     api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_ID}/${id}`),
 
   /**
@@ -118,6 +119,14 @@ export const documentService = {
    */
   deleteByTitle: (title: string) =>
     api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_TITLE}/${encodeURIComponent(title)}`),
+
+  /**
+   * Solicita al motor de IA los documentos más similares a un docId dado.
+   * Internamente Spring Boot llama a FastAPI POST /api/v1/recommend.
+   * GET /document/recommend/{docId}?topK=5
+   */
+  getRecommendations: (docId: string, topK = 5) =>
+    api.get<RecommendResponse>(`/document/recommend/${encodeURIComponent(docId)}`, { params: { topK } }),
 };
 
 // ── Keyword Service ───────────────────────────────────────────────────────────

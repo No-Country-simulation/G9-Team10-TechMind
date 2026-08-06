@@ -1,15 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { BarChart2, Hash, RefreshCw, Trash2 } from 'lucide-react';
-import { keywordService } from '@/services/api';
-import type { KeywordResponse } from '@/types';
+import { BarChart2, Hash, RefreshCw, Trash2, BookOpen, X } from 'lucide-react';
+import { keywordService, documentService } from '@/services/api';
+import type { KeywordResponse, DocumentResponse } from '@/types';
 import './HistoryKeywords.css';
 
-const PALETTE = [
-  '#6366f1','#a855f7','#06b6d4','#10b981',
-  '#f59e0b','#3b82f6','#ec4899','#14b8a6',
-  '#f97316','#8b5cf6','#ef4444','#22c55e',
-  '#e11d48','#0ea5e9','#84cc16',
-];
+import { CHART_PALETTE } from '@/utils/constants';
 
 function KwBarRow({
   kw, idx, maxFreq, onDelete,
@@ -20,7 +15,7 @@ function KwBarRow({
   onDelete: (kw: KeywordResponse) => void;
 }) {
   const fillRef = useRef<HTMLDivElement>(null);
-  const color = PALETTE[idx % PALETTE.length];
+  const color = CHART_PALETTE[idx % CHART_PALETTE.length];
   const pct   = maxFreq > 0 ? (idx === 0 ? 100 : Math.round(100 - idx * (80 / maxFreq))) : 0;
 
   useEffect(() => {
@@ -76,6 +71,28 @@ export function Keywords() {
   const [loading,  setLoading]  = useState(true);
   const [isDemo,   setIsDemo]   = useState(false);
   const [search,   setSearch]   = useState('');
+  const [selectedKw, setSelectedKw] = useState<KeywordResponse | null>(null);
+  const [kwDocs, setKwDocs] = useState<DocumentResponse[]>([]);
+  const [kwDocsLoading, setKwDocsLoading] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+        // Ignorar si se hizo click en un chip de la nube (tienen su propio handler)
+        const target = e.target as HTMLElement;
+        if (target.closest('.kw-cloud-chip')) return;
+        
+        setSelectedKw(null);
+        setKwDocs([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   const loadKeywords = async () => {
     setLoading(true);
@@ -93,18 +110,55 @@ export function Keywords() {
 
   useEffect(() => { loadKeywords(); }, []);
 
+  // Al hacer click en una keyword: busca su detalle y los docs asociados
+  const handleKwClick = async (kw: KeywordResponse) => {
+    if (selectedKw?.id === kw.id) { setSelectedKw(null); setKwDocs([]); return; }
+    setSelectedKw(kw);
+    setKwDocs([]);
+    setKwDocsLoading(true);
+    try {
+      // 1️⃣ Obtiene detalle de la keyword por ID
+      const detail = await keywordService.getById(kw.id);
+      setSelectedKw(detail);
+      // 2️⃣ Busca documentos que tienen esta keyword como título-keyword
+      const docs = await documentService.getByKeyword(detail.keyword);
+      setKwDocs(docs);
+    } catch {
+      // Si falla, busca por keyword exacta como fallback
+      try {
+        const kwDetail = await keywordService.getByKeyword(kw.keyword);
+        setSelectedKw(kwDetail);
+      } catch { /* mantener el objeto básico */ }
+    } finally {
+      setKwDocsLoading(false);
+    }
+  };
+
   const handleDelete = async (kw: KeywordResponse) => {
     if (!window.confirm(`¿Eliminar la keyword "${kw.keyword}"?`)) return;
     try {
-      await keywordService.deleteById(kw.id);
+      // 1️⃣ Primero intenta deleteByKeyword (más semántico)
+      await keywordService.deleteByKeyword(kw.keyword);
       setKeywords(prev => prev.filter(k => k.id !== kw.id));
+      if (selectedKw?.id === kw.id) { setSelectedKw(null); setKwDocs([]); }
     } catch {
-      alert('Error al eliminar la keyword.');
+      // Fallback: deleteById
+      try {
+        await keywordService.deleteById(kw.id);
+        setKeywords(prev => prev.filter(k => k.id !== kw.id));
+        if (selectedKw?.id === kw.id) { setSelectedKw(null); setKwDocs([]); }
+      } catch {
+        alert('Error al eliminar la keyword.');
+      }
     }
   };
 
   const filtered = keywords.filter(k =>
-    !search.trim() || k.keyword.toLowerCase().includes(search.toLowerCase())
+    !search.trim() || k.keyword?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const cloudKeywords = filtered.filter(k => 
+    !selectedLetter || (k.keyword && k.keyword.toUpperCase().startsWith(selectedLetter))
   );
 
   return (
@@ -125,18 +179,10 @@ export function Keywords() {
           </button>
         </div>
       ) : !loading && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '8px 14px',
-          background: 'rgba(16,185,129,0.06)',
-          border: '1px solid rgba(16,185,129,0.15)',
-          borderRadius: 'var(--radius-md)',
-          fontSize: '0.78rem', color: 'var(--clr-success)',
-          marginBottom: 20, animation: 'fade-in 0.4s ease both',
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--clr-success)', display: 'inline-block' }} />
+        <div className="status-banner">
+          <span className="status-banner-dot" />
           {keywords.length} keywords cargadas desde el backend
-          <button onClick={loadKeywords} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--clr-success)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem' }}>
+          <button onClick={loadKeywords} className="status-banner-btn">
             <RefreshCw size={11} /> Actualizar
           </button>
         </div>
@@ -184,7 +230,7 @@ export function Keywords() {
             Sin keywords aún
           </div>
           <p style={{ fontSize: '0.85rem' }}>
-            Analiza documentos en la página <a href="/analyze" style={{ color: 'var(--clr-primary-light)' }}>Analizar</a> para generar keywords automáticamente.
+            Analiza documentos en la página <a href="/analyze" style={{ color: 'var(--clr-primary)' }}>Analizar</a> para generar keywords automáticamente.
           </p>
         </div>
       ) : (
@@ -219,28 +265,56 @@ export function Keywords() {
               <Hash size={18} style={{ color: 'var(--clr-secondary)', flexShrink: 0 }} />
               <div>
                 <div className="kw-bars-title">Nube de Palabras</div>
-                <div className="kw-bars-sub">{filtered.length} keywords en el corpus</div>
+                <div className="kw-bars-sub">{cloudKeywords.length} keywords {selectedLetter ? `con la letra ${selectedLetter}` : 'en total'}</div>
               </div>
             </div>
 
+            {/* Abecedario */}
+            <div className="kw-alpha-filter fade-up">
+              <button 
+                className={`kw-alpha-btn ${!selectedLetter ? 'active' : ''}`}
+                onClick={() => setSelectedLetter(null)}
+              >
+                Todas
+              </button>
+              {ALPHABET.map(letter => (
+                <button
+                  key={letter}
+                  className={`kw-alpha-btn ${selectedLetter === letter ? 'active' : ''}`}
+                  onClick={() => setSelectedLetter(letter)}
+                >
+                  {letter}
+                </button>
+              ))}
+            </div>
+
             <div className="kw-cloud-body stagger">
-              {filtered.map((kw, i) => {
-                const ratio  = 1 - (i / (filtered.length || 1));
+              {cloudKeywords.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', width: '100%', color: 'var(--clr-text-muted)', fontSize: '0.85rem' }}>
+                  No hay palabras clave con esta letra.
+                </div>
+              ) : cloudKeywords.map((kw, i) => {
+                const ratio  = 1 - (i / (cloudKeywords.length || 1));
                 const size   = 0.72 + ratio * 0.65;
-                const color  = PALETTE[i % PALETTE.length];
+                const color  = CHART_PALETTE[i % CHART_PALETTE.length];
+                const isActive = selectedKw?.id === kw.id;
                 return (
                   <span
                     key={kw.id}
                     className="kw-cloud-chip"
                     style={{
                       fontSize: `${size}rem`,
-                      background: `${color}16`,
-                      borderColor: `${color}32`,
+                      background: isActive ? `${color}30` : `${color}16`,
+                      borderColor: isActive ? color : `${color}32`,
                       color,
                       animationDelay: `${i * 0.05}s`,
-                      cursor: 'default',
+                      cursor: 'pointer',
+                      outline: isActive ? `2px solid ${color}` : 'none',
+                      outlineOffset: 2,
+                      transition: 'all 0.15s',
                     }}
-                    title={`ID: ${kw.id}`}
+                    title={`ID: ${kw.id} — Click para ver documentos`}
+                    onClick={() => handleKwClick(kw)}
                   >
                     {kw.keyword}
                   </span>
@@ -249,6 +323,81 @@ export function Keywords() {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* ── Panel lateral: documentos que usan esta keyword ── */}
+      {selectedKw && (
+        <div
+          ref={drawerRef}
+          style={{
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 320,
+            background: 'var(--clr-surface-elevated, var(--clr-surface))',
+            borderLeft: '1px solid var(--clr-border)',
+            padding: '28px 22px',
+            overflowY: 'auto',
+            zIndex: 200,
+            boxShadow: '-4px 0 32px rgba(0,0,0,0.25)',
+            animation: 'slideInRight 0.22s ease',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Hash size={15} style={{ color: 'var(--clr-secondary)' }} />
+              <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{selectedKw.keyword}</span>
+            </div>
+            <button
+              onClick={() => { setSelectedKw(null); setKwDocs([]); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)', display: 'flex' }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginBottom: 16 }}>
+            ID: <span style={{ fontFamily: 'monospace' }}>#{selectedKw.id}</span>
+          </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)', marginBottom: 10 }}>
+              <BookOpen size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+              Documentos con esta keyword
+            </p>
+            {kwDocsLoading ? (
+              <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem' }}>Buscando documentos…</div>
+            ) : kwDocs.length === 0 ? (
+              <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem' }}>Ningún documento asociado</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {kwDocs.map(doc => (
+                  <div key={doc.docId} style={{
+                    background: 'var(--clr-surface)',
+                    border: '1px solid var(--clr-border)',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{doc.title}</div>
+                    <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.72rem' }}>
+                      {doc.categoria} · {Math.round(doc.probabilidadCategoria * 100)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => handleDelete(selectedKw)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+              color: 'var(--clr-danger)', borderRadius: 8, padding: '9px 0',
+              cursor: 'pointer', fontSize: '0.83rem', fontWeight: 600,
+            }}
+          >
+            <Trash2 size={13} /> Eliminar keyword
+          </button>
         </div>
       )}
     </main>

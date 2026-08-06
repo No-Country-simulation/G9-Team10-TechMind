@@ -1,211 +1,255 @@
-# 🧠 TechMind — Frontend
+# TechMind — Frontend
 
-Dashboard interactivo de organización inteligente de contenido técnico.  
+Plataforma web para organización inteligente del conocimiento técnico.  
 Construido con **React 19 + TypeScript + Vite**.
 
 ---
 
-## 🚀 Cómo correr el proyecto
+## Inicio rápido
 
-### Pre-requisitos
+### Requisitos
 
 | Herramienta | Versión mínima |
 |---|---|
 | Node.js | 18+ |
 | pnpm | 8+ |
 
-> Si no tienes `pnpm`: `npm install -g pnpm`
+```bash
+npm install -g pnpm   # si no lo tienes instalado
+```
 
 ### Instalación y arranque
 
 ```bash
-# 1. Entrar al directorio del frontend
 cd front-end
-
-# 2. Instalar dependencias
 pnpm install
-
-# 3. Levantar servidor de desarrollo (abre en http://localhost:5173)
 pnpm dev
 ```
 
-### Modo Demo (sin backend)
+La app abre en **http://localhost:5173** y redirige automáticamente a `/inicio`.
 
-El frontend funciona **sin necesidad de que el backend esté corriendo**.  
-Cuando la API falla (Connection Refused), automáticamente usa datos de ejemplo (`src/utils/mockData.ts`) para mostrar el dashboard completo.
+### Build de producción
+
+```bash
+pnpm build
+pnpm preview
+```
 
 ---
 
-## 📁 Estructura del proyecto
+## Modo de uso
+
+### 1. Navegación general
+
+El menú lateral izquierdo es el punto de entrada principal:
+
+| Sección | Ruta | Descripción |
+|---|---|---|
+| **Inicio** | `/inicio` | Pantalla de bienvenida con búsqueda, categorías y recomendaciones |
+| **Búsqueda** | `/busqueda` | Resultados con filtros por nivel, categoría e idioma |
+| **Biblioteca** | `/biblioteca` | Tabla con todos los documentos analizados |
+| **Recomendaciones** | `/recomendaciones` | Contenido sugerido por IA |
+| **Mis documentos** | `/mis-documentos` | Documentos del usuario en formato de tarjetas |
+| **Dashboard** | `/dashboard` | Métricas, gráficos y actividad reciente |
+| **Configuración** | `/configuracion` | Tema, idioma, perfil y preferencias |
+
+En la parte inferior del menú aparece el perfil del usuario con acceso directo a configuración.
+
+---
+
+### 2. Inicio (`/inicio`)
+
+1. Escribe en la barra de búsqueda qué tecnología quieres aprender.
+2. Pulsa **Buscar** para ir a la página de resultados.
+3. Explora el grid **Explora por categorías** (Backend, Frontend, DevOps, etc.).
+4. Revisa **Documentos recientes** y **Recomendaciones para ti**.
+
+---
+
+### 3. Búsqueda (`/busqueda`)
+
+1. Usa la barra superior para buscar por título, descripción o keywords.
+2. Abre **Filtros** para refinar por:
+   - **Nivel:** Principiante, Intermedio, Avanzado
+   - **Categoría:** Backend, Frontend, Data Science, etc.
+   - **Idioma:** Español, Inglés, Portugués
+3. Cada resultado muestra categoría, tags, tiempo de lectura y, si está activo en configuración, el **% de similitud**.
+4. Los documentos marcados con **Recomendado por IA** tienen badge púrpura.
+
+---
+
+### 4. Analizar contenido (`/analyze`)
+
+Accede desde **Biblioteca** o **Mis documentos** con los botones **Nuevo documento** / **Importar documento**.
+
+1. Ingresa el **título** del contenido técnico.
+2. Pega el **texto o descripción** (máx. 2000 caracteres).
+3. Pulsa **Analizar con IA**.
+4. El panel derecho muestra:
+   - Categoría detectada
+   - Confianza del modelo (%)
+   - Palabras clave
+   - Nivel de dificultad (si el backend lo devuelve)
+   - Vista JSON opcional
+
+También puedes usar los **ejemplos rápidos** para probar sin escribir contenido.
+
+---
+
+### 5. Biblioteca (`/biblioteca`)
+
+Gestiona el corpus completo de documentos:
+
+- **Buscar** por título, categoría o keyword
+- **Filtrar** por categoría con el selector desplegable
+- **Ordenar** por mayor o menor precisión
+- **Actualizar** la lista desde el backend
+- **Eliminar** documentos con el icono de papelera
+
+Columnas: Título, Categoría, Idioma, Nivel, Precisión y Acciones.
+
+---
+
+### 6. Dashboard (`/dashboard`)
+
+Vista de métricas del sistema:
+
+- Tarjetas: Total documentos, Idiomas detectados, Categorías, Embeddings generados
+- Gráfico de documentos procesados (últimos 7 días)
+- Distribución por categoría (donut + barras)
+- Actividad reciente y top keywords
+
+Si el backend no está disponible, muestra un banner **Modo Demo** con datos de ejemplo.
+
+---
+
+### 7. Configuración (`/configuracion`)
+
+Las preferencias se guardan en el navegador (`localStorage`) y persisten al recargar.
+
+#### General
+| Ajuste | Comportamiento |
+|---|---|
+| **Tema Claro / Oscuro** | Se aplica al instante en toda la app |
+| **Idioma** | ES / EN / PT — traduce el menú lateral al guardar |
+
+#### Perfil
+- Edita **nombre** y **email**
+- Al guardar, el sidebar muestra el nombre e iniciales actualizados
+
+#### Preferencias
+| Opción | Efecto |
+|---|---|
+| Mostrar similitud | Muestra u oculta el badge `% similitud` en búsqueda |
+| Vista compacta | Reduce el espaciado de la tabla en Biblioteca |
+| Idioma predeterminado | Preferencia para documentos nuevos |
+
+#### Notificaciones
+- Resumen semanal por email
+- Alertas de recomendaciones
+- Aviso al completar un análisis
+
+**Guardar cambios** persiste todo. **Descartar cambios** revierte al último estado guardado.
+
+---
+
+## Modo Demo vs. Modo conectado
+
+| Situación | Comportamiento |
+|---|---|
+| Backend **apagado** | La app funciona con datos mock; banner amarillo de demo en Dashboard/Biblioteca |
+| Backend **encendido** (`localhost:8080`) | Datos reales desde la API Spring Boot |
+| Análisis sin backend | Genera resultado demo local tras ~1 s |
+
+Para usar datos reales:
+
+```bash
+# Terminal 1 — Backend
+cd back-end
+./mvnw spring-boot:run
+
+# Terminal 2 — Frontend
+cd front-end
+pnpm dev
+```
+
+El proxy de Vite redirige `/api/*` → `http://localhost:8080`.
+
+---
+
+## Rutas adicionales
+
+| Ruta | Uso |
+|---|---|
+| `/keywords` | Ranking y nube de palabras clave (acceso directo por URL) |
+| `/history` | Redirige a `/biblioteca` |
+
+---
+
+## Estructura del proyecto
 
 ```
 front-end/
 ├── src/
 │   ├── components/
-│   │   └── layout/
-│   │       ├── Layout.tsx      # Sidebar + Topbar (wrapper de rutas)
-│   │       └── Layout.css
+│   │   ├── layout/          # Sidebar + shell principal
+│   │   └── ui/              # DocumentCard, CategoryIcon
+│   ├── context/
+│   │   └── SettingsContext.tsx   # Tema, idioma, perfil (localStorage)
 │   ├── pages/
-│   │   ├── Dashboard.tsx       # Métricas, gráficos, actividad reciente
-│   │   ├── Analyze.tsx         # Formulario de análisis con IA
-│   │   ├── History.tsx         # Historial de análisis con filtros
-│   │   ├── Keywords.tsx        # Ranking y nube de palabras clave
-│   │   └── *.css
-│   ├── services/
-│   │   └── api.ts              # Cliente HTTP + contentService
+│   │   ├── Home.tsx         # Inicio
+│   │   ├── Search.tsx       # Búsqueda
+│   │   ├── History.tsx      # Biblioteca
+│   │   ├── Dashboard.tsx    # Métricas
+│   │   ├── Analyze.tsx      # Análisis con IA
+│   │   ├── Settings.tsx     # Configuración
+│   │   └── ...
+│   ├── services/api.ts      # Cliente HTTP
 │   ├── utils/
-│   │   ├── constants.ts        # Rutas, endpoints, colores por categoría
-│   │   └── mockData.ts         # Datos de demo (fallback sin backend)
-│   └── types/
-│       └── index.ts            # Tipos TypeScript compartidos
-├── vite.config.ts              # Proxy /api → localhost:8080
+│   │   ├── constants.ts     # Rutas, colores, endpoints
+│   │   ├── i18n.ts          # Traducciones ES/EN/PT
+│   │   └── mockData.ts      # Datos de demo
+│   └── index.css            # Design system + tema oscuro
+├── vite.config.ts           # Proxy /api → localhost:8080
 └── package.json
 ```
 
 ---
 
-## 🔌 Integración con el Backend (Spring Boot)
-
-### Proxy configurado
-
-Todas las llamadas a `/api/*` se redirigen automáticamente al backend:
-
-```
-Frontend (localhost:5173) → /api/... → Backend (localhost:8080/api/...)
-```
-
-Configurado en `vite.config.ts`. En producción, configurar el reverse proxy (nginx / OCI Load Balancer) de la misma forma.
-
----
-
-## 📡 Contrato de API esperado
-
-### `POST /api/contenido` — Analizar contenido
-
-**Request:**
-```json
-{
-  "titulo": "Introducción a Spring Boot",
-  "texto": "En este contenido se presentan los conceptos básicos para la creación de APIs REST utilizando Java y Spring Boot."
-}
-```
-
-**Response esperada:**
-```json
-{
-  "categoria": "Backend",
-  "probabilidad": 0.89,
-  "informacion_adicional": ["Java", "Spring Boot", "API REST"]
-}
-```
-
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `categoria` | `string` | Categoría predicha por el modelo |
-| `probabilidad` | `float` (0–1) | Confianza del modelo |
-| `informacion_adicional` | `string[]` | Palabras clave extraídas |
-
----
-
-### `GET /api/contenido/stats` — Estadísticas del dashboard
-
-**Response esperada:**
-```json
-{
-  "total_documentos": 1247,
-  "categorias_activas": 10,
-  "precision_promedio": 91.4,
-  "documentos_hoy": 38
-}
-```
-
----
-
-### `GET /api/contenido/categories` — Distribución por categoría
-
-**Response esperada:**
-```json
-[
-  {
-    "categoria": "Backend",
-    "count": 312,
-    "porcentaje": 25.0
-  },
-  {
-    "categoria": "Frontend",
-    "count": 248,
-    "porcentaje": 19.9
-  }
-]
-```
-
----
-
-### `GET /api/contenido/keywords?limit=20` — Top palabras clave
-
-**Response esperada:**
-```json
-[
-  { "keyword": "Spring Boot", "frecuencia": 198 },
-  { "keyword": "React",       "frecuencia": 176 }
-]
-```
-
----
-
-### `GET /api/contenido/history?page=0&size=20` — Historial de análisis
-
-**Response esperada:**
-```json
-[
-  {
-    "id": "1",
-    "titulo": "Introducción a Spring Boot y REST APIs",
-    "categoria": "Backend",
-    "probabilidad": 0.95,
-    "timestamp": "2025-07-17T21:00:00Z"
-  }
-]
-```
-
----
-
-## 🏷️ Categorías soportadas
-
-El frontend tiene colores y íconos predefinidos para estas categorías.  
-El backend puede devolver cualquier string, pero estas tienen estilo visual:
-
-| Categoría | Color |
-|---|---|
-| Backend | `#6366f1` (índigo) |
-| Frontend | `#06b6d4` (cian) |
-| DevOps | `#10b981` (verde) |
-| Data Science | `#a855f7` (púrpura) |
-| Cloud | `#3b82f6` (azul) |
-| Base de Datos | `#14b8a6` (teal) |
-| Seguridad | `#f59e0b` (ámbar) |
-| Testing | `#f97316` (naranja) |
-| Mobile | `#ec4899` (rosa) |
-| Arquitectura | `#8b5cf6` (violeta) |
-
----
-
-## 🛠️ Scripts disponibles
+## Scripts disponibles
 
 ```bash
-pnpm dev        # Servidor de desarrollo con HMR
-pnpm build      # Build de producción (TypeScript + Vite)
-pnpm preview    # Previsualizar el build de producción
+pnpm dev        # Servidor de desarrollo (HMR)
+pnpm build      # Build de producción
+pnpm preview    # Previsualizar build
 pnpm lint       # Linter (oxlint)
 ```
 
-## 📦 Dependencias principales
+---
 
-| Paquete | Versión | Uso |
-|---|---|---|
-| `react` | 19.x | Framework UI |
-| `react-router-dom` | 7.x | Navegación SPA |
-| `recharts` | 3.x | Gráficos (AreaChart, PieChart) |
-| `lucide-react` | 1.x | Íconos |
-| `typescript` | 6.x | Tipado estático |
-| `vite` | 8.x | Build tool |
+## Categorías soportadas
+
+| Categoría | Color |
+|---|---|
+| Backend | `#2563EB` |
+| Frontend | `#08BBD4` |
+| DevOps | `#22C55E` |
+| Data Science | `#7C3AED` |
+| Cloud | `#3B82F6` |
+| Base de Datos | `#14B8A6` |
+| Seguridad | `#F59E0B` |
+| Testing | `#F97316` |
+| Mobile | `#EC4899` |
+| Arquitectura | `#8B5CF6` |
+
+---
+
+## Dependencias principales
+
+| Paquete | Uso |
+|---|---|
+| `react` 19 | Framework UI |
+| `react-router-dom` 7 | Navegación SPA |
+| `recharts` 3 | Gráficos del dashboard |
+| `lucide-react` | Iconos |
+| `vite` 8 | Build tool |

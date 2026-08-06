@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings } from 'lucide-react';
 import { documentService } from '@/services/api';
 import { generateMockAnalysis } from '@/utils/mockData';
-import { CATEGORY_COLORS } from '@/utils/constants';
+import { CATEGORY_COLORS, THEME } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import type { ContentInput, ContentAnalysisResult } from '@/types';
 import './Analyze.css';
@@ -112,7 +112,7 @@ export function Analyze() {
     textareaRef.current?.focus();
   };
 
-  const catColor = result ? (CATEGORY_COLORS[result.categoria] ?? '#6366f1') : '#6366f1';
+  const catColor = result ? (CATEGORY_COLORS[result.categoria] ?? THEME.primary) : THEME.primary;
 
   return (
     <main className="page-container">

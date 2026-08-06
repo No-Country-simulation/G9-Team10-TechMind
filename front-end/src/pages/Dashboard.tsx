@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -8,13 +9,10 @@ import {
   ArrowUpRight, ArrowDownRight, Clock, ArrowRight,
   RefreshCw, AlertCircle,
 } from 'lucide-react';
-import { CATEGORY_COLORS } from '@/utils/constants';
+import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { documentService } from '@/services/api';
-import {
-  mockStats, mockCategories, mockKeywords,
-  mockWeeklyData,
-} from '@/utils/mockData';
+import { mockWeeklyData } from '@/utils/mockData';
 import type { DashboardStats, CategoryStat, KeywordStat, RecentActivity, DocumentResponse } from '@/types';
 import './Dashboard.css';
 
@@ -68,7 +66,7 @@ function computeCategories(docs: DocumentResponse[]): CategoryStat[] {
       categoria: cat,
       count,
       porcentaje: (count / total) * 100,
-      color: CATEGORY_COLORS[cat] ?? '#6366f1',
+      color: CATEGORY_COLORS[cat] ?? THEME.primary,
     }));
 }
 
@@ -187,9 +185,9 @@ function CategoryRow({ cat, index }: { cat: CategoryStat; index: number }) {
 
 /* ── Dashboard Page ── */
 export function Dashboard() {
-  const [stats,      setStats]      = useState<DashboardStats>(mockStats);
-  const [categories, setCategories] = useState<CategoryStat[]>(mockCategories);
-  const [keywords,   setKeywords]   = useState<KeywordStat[]>(mockKeywords.slice(0, 12));
+  const [stats,      setStats]      = useState<DashboardStats>({ total_documentos: 0, categorias_activas: 0, precision_promedio: 0, documentos_hoy: 0 });
+  const [categories, setCategories] = useState<CategoryStat[]>([]);
+  const [keywords,   setKeywords]   = useState<KeywordStat[]>([]);
   const [activity,   setActivity]   = useState<RecentActivity[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [isDemo,     setIsDemo]     = useState(false);
@@ -206,10 +204,10 @@ export function Dashboard() {
       setActivity(computeActivity(docs));
       setIsDemo(false);
     } catch {
-      // Fallback a datos mock cuando el backend no está disponible
-      setStats(mockStats);
-      setCategories(mockCategories);
-      setKeywords(mockKeywords.slice(0, 12));
+      // Backend no disponible — mostrar ceros reales, no datos inventados
+      setStats({ total_documentos: 0, categorias_activas: 0, precision_promedio: 0, documentos_hoy: 0 });
+      setCategories([]);
+      setKeywords([]);
       setActivity([]);
       setIsDemo(true);
     } finally {
@@ -224,33 +222,33 @@ export function Dashboard() {
       label: 'Total Documentos',
       value: stats.total_documentos,
       suffix: '',
-      icon: <FileText size={20} color="#6366f1" />,
-      color: '#6366f1',
-      change: +12,
+      icon: <FileText size={20} color={THEME.primary} />,
+      color: THEME.primary,
+      change: 0,
+    },
+    {
+      label: 'Palabras Clave',
+      value: keywords.length,
+      suffix: '',
+      icon: <Layers size={20} color={THEME.secondary} />,
+      color: THEME.secondary,
+      change: 0,
     },
     {
       label: 'Categorías Activas',
       value: stats.categorias_activas,
       suffix: '',
-      icon: <Layers size={20} color="#06b6d4" />,
-      color: '#06b6d4',
-      change: +2,
+      icon: <TrendingUp size={20} color={THEME.success} />,
+      color: THEME.success,
+      change: 0,
     },
     {
       label: 'Precisión Promedio',
       value: Math.round(stats.precision_promedio),
       suffix: '%',
-      icon: <TrendingUp size={20} color="#10b981" />,
-      color: '#10b981',
-      change: +3,
-    },
-    {
-      label: 'Docs Hoy',
-      value: stats.documentos_hoy,
-      suffix: '',
-      icon: <Zap size={20} color="#a855f7" />,
-      color: '#a855f7',
-      change: +8,
+      icon: <Zap size={20} color={THEME.accent} />,
+      color: THEME.accent,
+      change: 0,
     },
   ];
 
@@ -287,22 +285,10 @@ export function Dashboard() {
       )}
 
       {!isDemo && !loading && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '8px 14px',
-          background: 'rgba(16,185,129,0.06)',
-          border: '1px solid rgba(16,185,129,0.15)',
-          borderRadius: 'var(--radius-md)',
-          fontSize: '0.78rem',
-          color: 'var(--clr-success)',
-          marginBottom: 20,
-          animation: 'fade-in 0.4s ease both',
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--clr-success)', display: 'inline-block' }} />
+        <div className="status-banner">
+          <span className="status-banner-dot" />
           Datos en tiempo real desde el backend
-          <button onClick={loadData} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--clr-success)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem' }}>
+          <button onClick={loadData} className="status-banner-btn">
             <RefreshCw size={11} /> Actualizar
           </button>
         </div>
@@ -316,9 +302,9 @@ export function Dashboard() {
 
       {/* Header */}
       <header className="page-header">
-        <h1 className="page-title">Dashboard de Conocimiento</h1>
+        <h1 className="page-title">Dashboard</h1>
         <p className="page-description">
-          {loading ? 'Cargando datos...' : 'Métricas en tiempo real de tu base de contenido técnico'}
+          {loading ? 'Cargando datos...' : 'Métricas y actividad del corpus de conocimiento'}
         </p>
       </header>
 
@@ -335,7 +321,7 @@ export function Dashboard() {
         <div className="chart-card fade-up" style={{ animationDelay: '0.3s' }}>
           <div className="chart-card-header">
             <div>
-              <div className="chart-title">Documentos Analizados</div>
+              <div className="chart-title">Documentos procesados</div>
               <div className="chart-subtitle">Actividad de los últimos 7 días</div>
             </div>
           </div>
@@ -343,12 +329,12 @@ export function Dashboard() {
             <AreaChart data={mockWeeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="grad-docs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="5%"  stopColor={THEME.primary} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={THEME.primary} stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="grad-prec" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  <stop offset="5%"  stopColor={THEME.success} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={THEME.success} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="dia" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -356,12 +342,12 @@ export function Dashboard() {
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone" dataKey="documentos" name="Documentos"
-                stroke="#6366f1" strokeWidth={2.5}
+                stroke={THEME.primary} strokeWidth={2.5}
                 fill="url(#grad-docs)" dot={false}
               />
               <Area
                 type="monotone" dataKey="promedio_precision" name="Precisión"
-                stroke="#10b981" strokeWidth={2}
+                stroke={THEME.success} strokeWidth={2}
                 fill="url(#grad-prec)" dot={false}
               />
             </AreaChart>
@@ -372,7 +358,7 @@ export function Dashboard() {
         <div className="chart-card fade-up" style={{ animationDelay: '0.4s' }}>
           <div className="chart-card-header">
             <div>
-              <div className="chart-title">Por Categoría</div>
+              <div className="chart-title">Distribución por categoría</div>
               <div className="chart-subtitle">Distribución del corpus</div>
             </div>
           </div>
@@ -412,9 +398,9 @@ export function Dashboard() {
         <div className="activity-card fade-up" style={{ animationDelay: '0.5s' }}>
           <div className="activity-header">
             <div className="activity-title">Actividad Reciente</div>
-            <a href="/history" style={{ fontSize: '0.78rem', color: 'var(--clr-primary-light)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Link to={ROUTES.LIBRARY} className="activity-link">
               Ver todo <ArrowRight size={12} />
-            </a>
+            </Link>
           </div>
           <div className="activity-list stagger">
             {activity.length === 0 && !loading ? (
@@ -432,7 +418,7 @@ export function Dashboard() {
                     <div className="activity-meta">
                       <span
                         className="activity-category"
-                        style={{ background: `${CATEGORY_COLORS[item.categoria] ?? '#6366f1'}18`, color: CATEGORY_COLORS[item.categoria] ?? 'var(--clr-primary-light)' }}
+                        style={{ background: `${CATEGORY_COLORS[item.categoria] ?? THEME.primary}14`, color: CATEGORY_COLORS[item.categoria] ?? THEME.primary }}
                       >
                         {item.categoria}
                       </span>
@@ -455,7 +441,7 @@ export function Dashboard() {
         <div className="quick-card fade-up" style={{ animationDelay: '0.6s' }}>
           <div className="quick-card-header">
             <div className="quick-card-title">Top Keywords</div>
-            <a href="/keywords" style={{ fontSize: '0.78rem', color: 'var(--clr-primary-light)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <a href="/keywords" className="activity-link">
               Ver todas <ArrowRight size={12} />
             </a>
           </div>
@@ -471,9 +457,9 @@ export function Dashboard() {
                   className="keyword-chip"
                   style={{
                     fontSize: `${size}rem`,
-                    background: `rgba(99,102,241,${alpha})`,
-                    borderColor: `rgba(99,102,241,${alpha * 2})`,
-                    color: ratio > 0.6 ? 'var(--clr-primary-light)' : 'var(--clr-text-subtle)',
+                    background: `rgba(37,99,235,${alpha})`,
+                    borderColor: `rgba(37,99,235,${alpha * 2.5})`,
+                    color: ratio > 0.6 ? THEME.primary : 'var(--clr-text-subtle)',
                     animationDelay: `${i * 0.04}s`,
                   }}
                 >

@@ -1,91 +1,74 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Sparkles,
-  Clock,
-  Tag,
-  Brain,
-  Settings,
+  Home,
   Search,
-  Bell,
-  Zap,
+  Library,
+  Sparkles,
+  FileText,
+  Settings,
+  Brain,
+  LayoutDashboard,
 } from 'lucide-react';
+import { ROUTES } from '@/utils/constants';
+import { useSettings } from '@/context/SettingsContext';
+import { useTranslations } from '@/utils/i18n';
 import './Layout.css';
 
 const navItems = [
-  { to: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard, badge: null },
-  { to: '/analyze',    label: 'Analizar',    icon: Sparkles,        badge: 'AI' },
-  { to: '/history',    label: 'Historial',   icon: Clock,           badge: null },
-  { to: '/keywords',   label: 'Keywords',    icon: Tag,             badge: null },
+  { to: ROUTES.HOME,            key: 'home' as const,            icon: Home },
+  { to: ROUTES.SEARCH,          key: 'search' as const,          icon: Search },
+  { to: ROUTES.LIBRARY,         key: 'library' as const,         icon: Library },
+  { to: ROUTES.RECOMMENDATIONS, key: 'recommendations' as const, icon: Sparkles },
+  { to: ROUTES.MY_DOCS,         key: 'myDocs' as const,          icon: FileText },
+  { to: ROUTES.DASHBOARD,       key: 'dashboard' as const,       icon: LayoutDashboard },
+  { to: ROUTES.SETTINGS,        key: 'settings' as const,        icon: Settings },
 ];
 
 export function Layout() {
+  const { settings, userInitials } = useSettings();
+  const t = useTranslations(settings.language);
+
   return (
     <div className="layout">
-      {/* ── Sidebar ── */}
       <aside className="sidebar">
-        <NavLink to="/dashboard" className="sidebar-brand">
-          <div className="sidebar-logo">🧠</div>
+        <NavLink to={ROUTES.HOME} className="sidebar-brand">
+          <div className="sidebar-logo">
+            <Brain size={22} strokeWidth={2.5} />
+          </div>
           <div>
-            <div className="sidebar-title">TechMind</div>
-            <div className="sidebar-subtitle">AI Knowledge Hub</div>
+            <div className="sidebar-title">
+              TECH <span className="sidebar-title-accent">MIND</span>
+            </div>
           </div>
         </NavLink>
 
         <nav className="sidebar-nav">
-          <div className="nav-section-label">Principal</div>
-          {navItems.map(({ to, label, icon: Icon, badge }) => (
+          {navItems.map(({ to, key, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             >
               <Icon className="nav-item-icon" size={18} />
-              {label}
-              {badge && <span className="nav-badge">{badge}</span>}
+              {t.nav[key]}
             </NavLink>
           ))}
-
-          <div className="nav-section-label">Sistema</div>
-          <button className="nav-item">
-            <Settings className="nav-item-icon" size={18} />
-            Configuración
-          </button>
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-status">
-            <div className="status-dot" />
-            <span className="status-text">API conectada</span>
-            <Zap size={12} style={{ marginLeft: 'auto', color: 'var(--clr-success)' }} />
+          <div className="sidebar-user">
+            <div className="sidebar-user-avatar">{userInitials}</div>
+            <div className="sidebar-user-info">
+              <span className="sidebar-user-name">{settings.profile.name}</span>
+              <NavLink to={ROUTES.SETTINGS} className="sidebar-user-link">
+                {t.nav.viewProfile}
+              </NavLink>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* ── Main ── */}
       <div className="main-content">
-        <header className="topbar">
-          <div className="topbar-left">
-            <span className="topbar-title">TechMind Platform</span>
-            <span className="topbar-breadcrumb">Organización Inteligente de Contenido</span>
-          </div>
-          <div className="topbar-right">
-            <div className="topbar-search">
-              <Search size={14} />
-              Buscar contenido…
-            </div>
-            <button className="topbar-icon-btn" aria-label="Notificaciones">
-              <Bell size={16} />
-            </button>
-            <button className="topbar-icon-btn" aria-label="Modelo AI">
-              <Brain size={16} />
-            </button>
-            <div className="topbar-avatar" title="Usuario">
-              TM
-            </div>
-          </div>
-        </header>
-
         <Outlet />
       </div>
     </div>
