@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import logoImg from '@/assets/icon.png';
+import techVideo from '@/assets/Tech.mp4';
 import {
   Home,
   Search,
@@ -8,6 +11,7 @@ import {
   Settings,
   Brain,
   LayoutDashboard,
+  Menu,
 } from 'lucide-react';
 import { ROUTES } from '@/utils/constants';
 import { useSettings } from '@/context/SettingsContext';
@@ -27,20 +31,35 @@ const navItems = [
 export function Layout() {
   const { settings, userInitials } = useSettings();
   const t = useTranslations(settings.language);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <NavLink to={ROUTES.HOME} className="sidebar-brand">
-          <div className="sidebar-logo">
-            <Brain size={22} strokeWidth={2.5} />
-          </div>
-          <div>
-            <div className="sidebar-title">
-              TECH <span className="sidebar-title-accent">MIND</span>
+    <div className={`layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <video autoPlay loop muted playsInline className="app-video-bg">
+        <source src={techVideo} type="video/mp4" />
+      </video>
+      <div className="app-video-overlay" />
+
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header-wrapper" style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--clr-border)', paddingRight: '16px' }}>
+          <NavLink to={ROUTES.HOME} className="sidebar-brand" style={{ flex: 1, borderBottom: 'none' }}>
+            <div className="sidebar-logo">
+              <Brain size={22} strokeWidth={2.5} />
             </div>
-          </div>
-        </NavLink>
+            <div>
+              <div className="sidebar-title">
+                TECH <span className="sidebar-title-accent">MIND</span>
+              </div>
+            </div>
+          </NavLink>
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)' }}
+            title="Contraer menú"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
 
         <nav className="sidebar-nav">
           {navItems.map(({ to, key, icon: Icon }) => (
@@ -54,6 +73,10 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className="sidebar-blurred-bg">
+          <img src={logoImg} alt="" />
+        </div>
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
@@ -69,7 +92,18 @@ export function Layout() {
       </aside>
 
       <div className="main-content">
-        <Outlet />
+        {!isSidebarOpen && (
+          <button 
+            className="menu-toggle-floating" 
+            onClick={() => setIsSidebarOpen(true)}
+            title="Abrir menú lateral"
+          >
+            <Menu size={24} />
+          </button>
+        )}
+        <div className="page-scroll-area">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

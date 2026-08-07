@@ -159,12 +159,12 @@
 
 html {
   scroll-behavior: smooth;
-  background-color: var(--clr-bg);
+  background-color: transparent;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--clr-bg);
+  background-color: transparent;
   color: var(--clr-text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;

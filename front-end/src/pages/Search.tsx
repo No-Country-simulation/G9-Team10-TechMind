@@ -122,7 +122,8 @@ export function SearchPage() {
   };
 
   const toggleFilter = (list: string[], set: (v: string[]) => void, value: string) => {
-    set(list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
+    // Exclusivo: si ya está seleccionado, se vacía. Si no, se selecciona como único valor.
+    set(list.includes(value) ? [] : [value]);
   };
 
   return (
