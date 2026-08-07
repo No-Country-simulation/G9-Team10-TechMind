@@ -49,7 +49,7 @@ export function Home() {
       .then(docs => {
         if (docs.length > 0) {
           setTotalDocs(docs.length);
-          setRecent(docs.slice(0, 4).map(docToCard));
+          setRecent(docs.slice(0, 3).map(docToCard));
           const top = [...docs]
             .sort((a, b) => b.probabilidadCategoria - a.probabilidadCategoria)
             .slice(0, 3)

@@ -3,17 +3,15 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, ChevronDown, Check, RefreshCw, Trash2, Plus, Upload, X, BookOpen, Sparkles } from 'lucide-react';
 import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Pagination } from '@/components/ui/Pagination';
 import { documentService } from '@/services/api';
 import { useSettings } from '@/context/SettingsContext';
 import type { DocumentResponse, DocumentoSimilitudResponse } from '@/types';
 import './HistoryKeywords.css';
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('es', {
-    day: '2-digit', month: 'short',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(iso));
-}
+const PAGE_SIZE = 30;
+
+
 
 /* ── Custom Dropdown ── */
 function CatDropdown({ value, options, onChange }: {
@@ -80,13 +78,18 @@ export function History() {
   const [cat,     setCat]     = useState('Todas');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
   const [loading, setLoading] = useState(true);
-  const [isDemo,  setIsDemo]  = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [detailDoc, setDetailDoc] = useState<DocumentResponse | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<DocumentoSimilitudResponse[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Volver a la página 1 cuando se cambia la búsqueda, categoría o el orden
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, cat, sortDir]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -107,9 +110,7 @@ export function History() {
     try {
       const data = await documentService.getAll();
       setDocs(data);
-      setIsDemo(false);
     } catch {
-      setIsDemo(true);
       setDocs([]);
     } finally {
       setLoading(false);
@@ -139,6 +140,12 @@ export function History() {
       ? list.sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0))
       : list.sort((a, b) => (a.probabilidadCategoria || 0) - (b.probabilidadCategoria || 0));
   }, [docs, search, cat, sortDir]);
+
+  const totalPages = useMemo(() => Math.ceil(filtered.length / PAGE_SIZE), [filtered.length]);
+  const pagedFiltered = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
 
   const handleDelete = async (doc: DocumentResponse) => {
     if (!window.confirm(`¿Eliminar "${doc.title}"?`)) return;
@@ -193,14 +200,7 @@ export function History() {
         </div>
       </header>
 
-      {isDemo && (
-        <div className="demo-banner" style={{ marginBottom: 20 }}>
-          Backend no disponible — sin historial real.
-          <button onClick={loadDocs} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--clr-warning)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <RefreshCw size={11} /> Reintentar
-          </button>
-        </div>
-      )}
+
 
       {/* ── Toolbar ── */}
       <div className="history-toolbar">
@@ -274,7 +274,7 @@ export function History() {
                       : 'No se encontraron resultados'}
                   </td>
                 </tr>
-              ) : filtered.map((doc, i) => {
+              ) : pagedFiltered.map((doc, i) => {
                 const col = CATEGORY_COLORS[doc.categoria] ?? THEME.primary;
                 const pct = Math.round(doc.probabilidadCategoria * 100);
                 const isActive = detailDoc?.docId === doc.docId;
@@ -354,6 +354,16 @@ export function History() {
               })}
             </tbody>
           </table>
+        )}
+
+        {!loading && filtered.length > 0 && (
+          <div style={{ marginTop: 24, paddingBottom: 24 }}>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={page => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            />
+          </div>
         )}
       </div>
       {/* ── Detail Drawer ── */}

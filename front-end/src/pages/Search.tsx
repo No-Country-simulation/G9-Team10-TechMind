@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2, Sparkles } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { Pagination } from '@/components/ui/Pagination';
 import { CATEGORY_COLORS, ROUTES, THEME } from '@/utils/constants';
 import { documentService } from '@/services/api';
 import { useSettings } from '@/context/SettingsContext';
-import type { DocumentResponse } from '@/types';
+import type { DocumentResponse, DocumentoSimilitudResponse } from '@/types';
 import './Search.css';
+
+const PAGE_SIZE = 10;
 
 const LEVELS = ['Principiante', 'Intermedio', 'Avanzado'];
 const LANGUAGES = ['Español', 'Inglés', 'Portugués'];
@@ -41,6 +44,8 @@ export function SearchPage() {
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [semanticResults, setSemanticResults] = useState<DocumentoSimilitudResponse[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Carga inicial: todos los documentos
   useEffect(() => {
@@ -56,10 +61,12 @@ export function SearchPage() {
       setDocs(allDocs);
       setSearchMode('all');
       setSearchError(null);
+      setSemanticResults([]);
       return;
     }
     setLoading(true);
     setSearchError(null);
+    setSemanticResults([]);
 
     // Evitar Error 400: Spring Boot rechaza %2F en @PathVariable
     if (q.includes('/') || q.includes('\\')) {
@@ -85,13 +92,25 @@ export function SearchPage() {
         setDocs([byTitle]);
         setSearchMode('title');
       } catch {
-        // 3️⃣ Fallback final: filtro local sobre todos los docs
+        // 3️⃣ Fallback local
         const q2 = q.toLowerCase();
-        setDocs(allDocs.filter(d =>
+        const localResults = allDocs.filter(d =>
           (d.title?.toLowerCase().includes(q2)) ||
           (d.keywords?.some(k => k?.toLowerCase().includes(q2)))
-        ));
+        );
+        setDocs(localResults);
         setSearchMode('all');
+
+        // 4️⃣ Si tampoco hay resultados locales → buscar semánticamente con IA
+        if (localResults.length === 0) {
+          try {
+            const semantic = await documentService.semanticSearch(q.trim(), 3);
+            setSemanticResults(semantic.resultados ?? []);
+          } catch {
+            // Motor semántico no disponible — no bloqueamos la UI
+            setSemanticResults([]);
+          }
+        }
       }
     } finally {
       setLoading(false);
@@ -115,8 +134,32 @@ export function SearchPage() {
     return list;
   }, [docs, selectedCats, selectedLevels]);
 
+  // Reset page when results change (new search or filter)
+  const totalPages = useMemo(() => Math.ceil(results.length / PAGE_SIZE), [results.length]);
+  const pagedResults = useMemo(
+    () => results.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [results, currentPage]
+  );
+
+  // Enriquecer resultados semánticos con datos completos del documento.
+  // Filtra resultados "Mock" (IDs que no existen en allDocs).
+  const enrichedSemanticResults = useMemo(() => {
+    return semanticResults
+      .map(sr => {
+        const fullDoc = allDocs.find(d => d.docId === sr.doc_id);
+        if (!fullDoc) return null; // Ignorar mocks
+        return {
+          ...docToResult(fullDoc),
+          similarity: Math.round(sr.similarity_score * 100), // Usar la precisión real devuelta por la IA
+          recommended: true
+        };
+      })
+      .filter((r): r is ReturnType<typeof docToResult> => r !== null);
+  }, [semanticResults, allDocs]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentPage(1);
     setParams({ q: query, ...(selectedCats[0] ? { cat: selectedCats[0] } : {}) });
     runSearch(query);
   };
@@ -220,13 +263,15 @@ export function SearchPage() {
             {loading ? 'Buscando…' : `${results.length} resultado${results.length !== 1 ? 's' : ''} encontrado${results.length !== 1 ? 's' : ''}`}
           </p>
           <div className="results-list stagger">
-            {!loading && results.length === 0 && (
+            {!loading && results.length === 0 && enrichedSemanticResults.length === 0 && (
               <div className="results-empty">
                 No se encontraron resultados.{' '}
                 <Link to={ROUTES.ANALYZE}>Analiza un nuevo documento</Link>
               </div>
             )}
-            {results.map((r, i) => (
+
+            {/* Resultados normales */}
+            {pagedResults.map((r, i) => (
               <DocumentCard
                 key={i}
                 {...r}
@@ -234,6 +279,46 @@ export function SearchPage() {
                 to={ROUTES.LIBRARY}
               />
             ))}
+
+            {/* Paginación */}
+            {!loading && results.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={page => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              />
+            )}
+
+            {/* Fallback semántico con IA cuando no hay resultados exactos */}
+            {!loading && results.length === 0 && enrichedSemanticResults.length > 0 && (
+              <div style={{ width: '100%' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  marginBottom: 16, padding: '10px 14px',
+                  background: 'rgba(37,99,235,0.07)',
+                  border: '1px solid rgba(37,99,235,0.18)',
+                  borderRadius: 10,
+                  fontSize: '0.82rem', color: 'var(--clr-primary)',
+                }}>
+                  <Sparkles size={15} />
+                  <span>
+                    No se encontró una coincidencia exacta.{' '}
+                    <strong>El motor de IA encontró {enrichedSemanticResults.length} documento{enrichedSemanticResults.length !== 1 ? 's' : ''} similares:</strong>
+                  </span>
+                </div>
+
+                <div className="results-list stagger">
+                  {enrichedSemanticResults.map((r, i) => (
+                    <DocumentCard
+                      key={i}
+                      {...r}
+                      showSimilarity={true}
+                      to={ROUTES.LIBRARY}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>

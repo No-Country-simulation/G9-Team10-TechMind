@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
 import { ROUTES } from '@/utils/constants';
 import { documentService } from '@/services/api';
@@ -21,7 +21,7 @@ function docToCard(doc: DocumentResponse) {
 export function Recommendations() {
   const [docs, setDocs] = useState<ReturnType<typeof docToCard>[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
+
 
   const load = async () => {
     setLoading(true);
@@ -33,9 +33,7 @@ export function Recommendations() {
         .slice(0, 12)
         .map(docToCard);
       setDocs(top);
-      setIsDemo(false);
     } catch {
-      setIsDemo(true);
       setDocs([]);
     } finally {
       setLoading(false);
@@ -58,14 +56,7 @@ export function Recommendations() {
         </div>
       </header>
 
-      {isDemo && (
-        <div className="demo-banner" style={{ marginBottom: 20 }}>
-          Backend no disponible — sin recomendaciones reales.
-          <button onClick={load} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--clr-warning)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <RefreshCw size={11} /> Reintentar
-          </button>
-        </div>
-      )}
+
 
       {loading ? (
         <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--clr-text-muted)' }}>

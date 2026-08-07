@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Plus, Upload, RefreshCw, Search, Trash2, X } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { Pagination } from '@/components/ui/Pagination';
 import { ROUTES } from '@/utils/constants';
 import { documentService } from '@/services/api';
 import type { DocumentResponse } from '@/types';
 import './MyDocuments.css';
+
+const PAGE_SIZE = 12;
 
 function docToCard(doc: DocumentResponse) {
   return {
@@ -27,12 +30,20 @@ export function MyDocuments() {
   const [searchMode, setSearchMode] = useState<SearchMode>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = useMemo(() => Math.ceil(docs.length / PAGE_SIZE), [docs.length]);
+  const pagedDocs = useMemo(
+    () => docs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [docs, currentPage]
+  );
 
   const load = () => {
     setLoading(true);
     setSearchTitle('');
     setSearchMode('all');
     setSearchError(null);
+    setCurrentPage(1);
     documentService.getAll()
       .then(setDocs)
       .catch(() => setDocs([]))
@@ -56,6 +67,7 @@ export function MyDocuments() {
 
     setLoading(true);
     setSearchError(null);
+    setCurrentPage(1);
     try {
       const doc = await documentService.getByTitle(q);
       setDocs([doc]);
@@ -173,34 +185,41 @@ export function MyDocuments() {
           </button>
         </div>
       ) : (
-        <div className="mydocs-grid stagger">
-          {docs.map(doc => (
-            <div key={doc.docId} style={{ position: 'relative' }}>
-              <DocumentCard {...docToCard(doc)} />
-              <button
-                onClick={() => handleDelete(doc)}
-                disabled={deleting === doc.docId}
-                title="Eliminar documento"
-                style={{
-                  position: 'absolute', top: 10, right: 10,
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.25)',
-                  borderRadius: 6, padding: '4px 6px',
-                  color: 'var(--clr-danger)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center',
-                  opacity: deleting === doc.docId ? 0.5 : 0.7,
-                  transition: 'opacity 0.2s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = deleting === doc.docId ? '0.5' : '0.7')}
-              >
-                {deleting === doc.docId
-                  ? <RefreshCw size={12} className="spin" />
-                  : <Trash2 size={12} />}
-              </button>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="mydocs-grid stagger">
+            {pagedDocs.map(doc => (
+              <div key={doc.docId} style={{ position: 'relative' }}>
+                <DocumentCard {...docToCard(doc)} />
+                <button
+                  onClick={() => handleDelete(doc)}
+                  disabled={deleting === doc.docId}
+                  title="Eliminar documento"
+                  style={{
+                    position: 'absolute', top: 10, right: 10,
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.25)',
+                    borderRadius: 6, padding: '4px 6px',
+                    color: 'var(--clr-danger)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center',
+                    opacity: deleting === doc.docId ? 0.5 : 0.7,
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = deleting === doc.docId ? '0.5' : '0.7')}
+                >
+                  {deleting === doc.docId
+                    ? <RefreshCw size={12} className="spin" />
+                    : <Trash2 size={12} />}
+                </button>
+              </div>
+            ))}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={page => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          />
+        </>
       )}
     </main>
   );

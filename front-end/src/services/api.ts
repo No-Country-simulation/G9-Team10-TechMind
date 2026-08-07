@@ -11,6 +11,13 @@ import type {
   RecommendResponse,
 } from '@/types';
 import { API_ENDPOINTS } from '@/utils/constants';
+import { cacheOrFetch, cacheInvalidateAll } from '@/services/cache';
+
+// ── Claves de caché ───────────────────────────────────────────────────────────
+const CACHE_KEYS = {
+  ALL_DOCS: 'all_docs',
+  ALL_KEYWORDS: 'all_keywords',
+} as const;
 
 const BASE_URL = '/api';
 
@@ -75,15 +82,20 @@ export const documentService = {
    * Crea / analiza un documento con IA.
    * POST /document/create  →  { title, content }
    */
-  create: (req: DocumentRequest) =>
-    api.post<DocumentResponse>(API_ENDPOINTS.DOCUMENT.CREATE, req),
+  create: async (req: DocumentRequest) => {
+    const result = await api.post<DocumentResponse>(API_ENDPOINTS.DOCUMENT.CREATE, req);
+    // El corpus cambió — invalidar caché para forzar recarga en próxima consulta
+    cacheInvalidateAll();
+    return result;
+  },
 
   /**
    * Retorna todos los documentos almacenados.
    * GET /document/all
+   * ✅ Cacheado 5 min en memoria + localStorage para consultas ultrarrápidas.
    */
   getAll: () =>
-    api.get<DocumentResponse[]>(API_ENDPOINTS.DOCUMENT.ALL),
+    cacheOrFetch(CACHE_KEYS.ALL_DOCS, () => api.get<DocumentResponse[]>(API_ENDPOINTS.DOCUMENT.ALL)),
 
   /**
    * Busca un documento por su ID.
@@ -110,23 +122,34 @@ export const documentService = {
    * Elimina un documento por ID.
    * DELETE /document/id/{id}
    */
-  deleteById: (id: string) =>
-    api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_ID}/${id}`),
+  deleteById: async (id: string) => {
+    await api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_ID}/${id}`);
+    cacheInvalidateAll();
+  },
 
   /**
    * Elimina un documento por título.
    * DELETE /document/title/{title}
    */
-  deleteByTitle: (title: string) =>
-    api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_TITLE}/${encodeURIComponent(title)}`),
+  deleteByTitle: async (title: string) => {
+    await api.delete<void>(`${API_ENDPOINTS.DOCUMENT.DELETE_BY_TITLE}/${encodeURIComponent(title)}`);
+    cacheInvalidateAll();
+  },
 
   /**
    * Solicita al motor de IA los documentos más similares a un docId dado.
-   * Internamente Spring Boot llama a FastAPI POST /api/v1/recommend.
    * GET /document/recommend/{docId}?topK=5
    */
   getRecommendations: (docId: string, topK = 5) =>
     api.get<RecommendResponse>(`/document/recommend/${encodeURIComponent(docId)}`, { params: { topK } }),
+
+  /**
+   * Búsqueda semántica por texto libre usando el motor de IA.
+   * Se activa como fallback cuando no hay resultados por keyword o título.
+   * GET /document/search?query=...&topK=3
+   */
+  semanticSearch: (query: string, topK = 3) =>
+    api.get<RecommendResponse>('/document/search', { params: { query, topK } }),
 };
 
 // ── Keyword Service ───────────────────────────────────────────────────────────
@@ -137,7 +160,7 @@ export const keywordService = {
    * GET /keyword/findAll
    */
   getAll: () =>
-    api.get<KeywordResponse[]>(API_ENDPOINTS.KEYWORD.ALL),
+    cacheOrFetch(CACHE_KEYS.ALL_KEYWORDS, () => api.get<KeywordResponse[]>(API_ENDPOINTS.KEYWORD.ALL), 10 * 60 * 1000),
 
   /**
    * Busca una keyword por ID.

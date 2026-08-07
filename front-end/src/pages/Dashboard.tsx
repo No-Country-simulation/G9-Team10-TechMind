@@ -7,12 +7,10 @@ import {
 import {
   FileText, Layers, TrendingUp, Zap,
   ArrowUpRight, ArrowDownRight, Clock, ArrowRight,
-  RefreshCw, AlertCircle,
 } from 'lucide-react';
 import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { documentService } from '@/services/api';
-import { mockWeeklyData } from '@/utils/mockData';
 import type { DashboardStats, CategoryStat, KeywordStat, RecentActivity, DocumentResponse } from '@/types';
 import './Dashboard.css';
 
@@ -42,7 +40,6 @@ function useCountUp(target: number, duration = 1200) {
 
 /** Convierte DocumentResponse[] → DashboardStats */
 function computeStats(docs: DocumentResponse[]): DashboardStats {
-  const today = new Date().toDateString();
   const categorias = new Set(docs.map(d => d.categoria)).size;
   const precision = docs.length
     ? docs.reduce((acc, d) => acc + d.probabilidadCategoria, 0) / docs.length
@@ -82,7 +79,7 @@ function computeKeywords(docs: DocumentResponse[]): KeywordStat[] {
     .map(([keyword, frecuencia]) => ({ keyword, frecuencia }));
 }
 
-/** Convierte DocumentResponse[] → RecentActivity[] (últimos 6) */
+/** Calcula actividad reciente real */
 function computeActivity(docs: DocumentResponse[]): RecentActivity[] {
   return docs.slice(0, 6).map((d, i) => ({
     id: d.docId ?? String(i),
@@ -90,6 +87,24 @@ function computeActivity(docs: DocumentResponse[]): RecentActivity[] {
     categoria: d.categoria,
     probabilidad: d.probabilidadCategoria,
     timestamp: new Date(Date.now() - i * 1000 * 60 * 15).toISOString(),
+  }));
+}
+
+/** Calcula data real para el gráfico de 7 días (como no hay fecha real, mapeamos todo a hoy) */
+function computeWeeklyData(docs: DocumentResponse[]) {
+  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const todayIndex = new Date().getDay(); 
+  const jsDayToArr = todayIndex === 0 ? 6 : todayIndex - 1;
+
+  let avgPrec = 0;
+  if (docs.length > 0) {
+    avgPrec = docs.reduce((acc, d) => acc + (d.probabilidadCategoria || 0), 0) / docs.length;
+  }
+
+  return days.map((name, i) => ({
+    name,
+    docs: i === jsDayToArr ? docs.length : 0,
+    precision: i === jsDayToArr ? Math.round(avgPrec * 100) : 0,
   }));
 }
 
@@ -190,8 +205,9 @@ export function Dashboard() {
   const [keywords,   setKeywords]   = useState<KeywordStat[]>([]);
   const [activity,   setActivity]   = useState<RecentActivity[]>([]);
   const [loading,    setLoading]    = useState(true);
-  const [isDemo,     setIsDemo]     = useState(false);
   const [error,      setError]      = useState<string | null>(null);
+
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
 
   const loadData = async () => {
     setLoading(true);
@@ -202,14 +218,14 @@ export function Dashboard() {
       setCategories(computeCategories(docs));
       setKeywords(computeKeywords(docs));
       setActivity(computeActivity(docs));
-      setIsDemo(false);
+      setWeeklyData(computeWeeklyData(docs));
     } catch {
       // Backend no disponible — mostrar ceros reales, no datos inventados
       setStats({ total_documentos: 0, categorias_activas: 0, precision_promedio: 0, documentos_hoy: 0 });
       setCategories([]);
       setKeywords([]);
       setActivity([]);
-      setIsDemo(true);
+      setWeeklyData(computeWeeklyData([]));
     } finally {
       setLoading(false);
     }
@@ -255,44 +271,7 @@ export function Dashboard() {
   return (
     <main className="page-container">
 
-      {/* Status bar */}
-      {isDemo && (
-        <div className="demo-banner">
-          <AlertCircle size={14} />
-          <span>
-            <strong>Modo Demo:</strong> visualizando datos de muestra — conecta el backend
-            Spring Boot en <code>localhost:8080</code> para datos reales.
-          </span>
-          <button
-            onClick={loadData}
-            style={{
-              marginLeft: 'auto',
-              background: 'rgba(245,158,11,0.15)',
-              border: '1px solid rgba(245,158,11,0.3)',
-              color: 'var(--clr-warning)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '3px 10px',
-              fontSize: '0.75rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            }}
-          >
-            <RefreshCw size={11} /> Reintentar
-          </button>
-        </div>
-      )}
 
-      {!isDemo && !loading && (
-        <div className="status-banner">
-          <span className="status-banner-dot" />
-          Datos en tiempo real desde el backend
-          <button onClick={loadData} className="status-banner-btn">
-            <RefreshCw size={11} /> Actualizar
-          </button>
-        </div>
-      )}
 
       {error && (
         <div style={{ color: 'var(--clr-danger)', marginBottom: 16, fontSize: '0.8rem' }}>
@@ -326,7 +305,7 @@ export function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={mockWeeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <AreaChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="grad-docs" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor={THEME.primary} stopOpacity={0.2} />

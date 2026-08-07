@@ -511,10 +511,6 @@
   border-radius: var(--radius-full);
 }
 
-/* Sections */
-.home-section {
-  margin-bottom: 36px;
-}
 
 .section-header {
   display: flex;
@@ -595,6 +591,11 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 28px;
+  align-items: start;
+}
+
+.home-section {
+  margin-bottom: 0;
 }
 
 .doc-list {

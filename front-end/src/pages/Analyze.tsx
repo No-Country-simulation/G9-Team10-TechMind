@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
-import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings } from 'lucide-react';
+import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings, Trash2 } from 'lucide-react';
 import { documentService } from '@/services/api';
-import { generateMockAnalysis } from '@/utils/mockData';
 import { CATEGORY_COLORS, THEME } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import type { ContentInput, ContentAnalysisResult } from '@/types';
@@ -80,11 +79,21 @@ export function Analyze() {
     setResult(null);
 
     try {
-      // Llama a POST /document/create con el body { title, content }
-      const doc = await documentService.create({
-        title:   input.titulo,
-        content: input.texto,
-      });
+      let doc;
+      let alreadyExists = false;
+
+      try {
+        // 1. Verificar si el documento ya existe
+        doc = await documentService.getByTitle(input.titulo);
+        alreadyExists = true;
+      } catch {
+        // 2. Si no existe, crearlo llamando al backend
+        doc = await documentService.create({
+          title:   input.titulo,
+          content: input.texto,
+        });
+      }
+
       // Mapea DocumentResponse → ContentAnalysisResult para el UI existente
       setResult({
         id:                    doc.docId,
@@ -96,11 +105,12 @@ export function Analyze() {
         texto_preview:         doc.content?.slice(0, 160) + (doc.content?.length > 160 ? '…' : ''),
         nivel:                 doc.nivel,
       });
+
+      if (alreadyExists) {
+        setError('ℹ El documento ya existía y fue recuperado de la base de datos.');
+      }
     } catch {
-      // Fallback a datos generados localmente cuando el backend no está disponible
-      await new Promise(r => setTimeout(r, 900));
-      setResult(generateMockAnalysis(input.titulo, input.texto));
-      setError('⚠ Backend no disponible — resultado generado en modo demo.');
+      setError('⚠ Error de conexión. El backend no está disponible.');
     } finally {
       setLoading(false);
     }
@@ -110,6 +120,12 @@ export function Analyze() {
     setInput(ex);
     setResult(null);
     textareaRef.current?.focus();
+  };
+
+  const clearInput = () => {
+    setInput({ titulo: '', texto: '' });
+    setResult(null);
+    setError(null);
   };
 
   const catColor = result ? (CATEGORY_COLORS[result.categoria] ?? THEME.primary) : THEME.primary;
@@ -127,9 +143,37 @@ export function Analyze() {
         {/* ── Input Panel ── */}
         <form onSubmit={handleSubmit}>
           <div className="analyze-input-panel">
-            <div className="panel-title">
-              <Sparkles size={18} style={{ color: 'var(--clr-primary)' }} />
-              Entrada de Contenido
+            <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sparkles size={18} style={{ color: 'var(--clr-primary)' }} />
+                Entrada de Contenido
+              </div>
+              {(input.titulo || input.texto || result) && (
+                <button
+                  type="button"
+                  onClick={clearInput}
+                  title="Limpiar campos"
+                  style={{
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    color: 'var(--clr-danger)',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                >
+                  <Trash2 size={14} />
+                  Limpiar
+                </button>
+              )}
             </div>
             <p className="panel-subtitle">
               Proporciona el título y el texto del contenido técnico a clasificar
@@ -171,11 +215,11 @@ export function Analyze() {
             {error && (
               <div style={{
                 padding: '10px 14px',
-                background: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.2)',
+                background: error.startsWith('ℹ') ? 'rgba(37,99,235,0.08)' : 'rgba(239,68,68,0.08)',
+                border: error.startsWith('ℹ') ? '1px solid rgba(37,99,235,0.2)' : '1px solid rgba(239,68,68,0.2)',
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
-                color: 'var(--clr-danger)',
+                color: error.startsWith('ℹ') ? 'var(--clr-primary)' : 'var(--clr-danger)',
                 marginBottom: 12,
               }}>
                 {error}

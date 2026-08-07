@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BarChart2, Hash, RefreshCw, Trash2, BookOpen, X } from 'lucide-react';
+import { BarChart2, Hash, Trash2, BookOpen, X } from 'lucide-react';
 import { keywordService, documentService } from '@/services/api';
 import type { KeywordResponse, DocumentResponse } from '@/types';
 import './HistoryKeywords.css';
@@ -7,16 +7,14 @@ import './HistoryKeywords.css';
 import { CHART_PALETTE } from '@/utils/constants';
 
 function KwBarRow({
-  kw, idx, maxFreq, onDelete,
+  kw, idx, onDelete,
 }: {
   kw: KeywordResponse;
   idx: number;
-  maxFreq: number;
   onDelete: (kw: KeywordResponse) => void;
 }) {
   const fillRef = useRef<HTMLDivElement>(null);
   const color = CHART_PALETTE[idx % CHART_PALETTE.length];
-  const pct   = maxFreq > 0 ? (idx === 0 ? 100 : Math.round(100 - idx * (80 / maxFreq))) : 0;
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -69,7 +67,6 @@ function KwBarRow({
 export function Keywords() {
   const [keywords, setKeywords] = useState<KeywordResponse[]>([]);
   const [loading,  setLoading]  = useState(true);
-  const [isDemo,   setIsDemo]   = useState(false);
   const [search,   setSearch]   = useState('');
   const [selectedKw, setSelectedKw] = useState<KeywordResponse | null>(null);
   const [kwDocs, setKwDocs] = useState<DocumentResponse[]>([]);
@@ -99,9 +96,7 @@ export function Keywords() {
     try {
       const data = await keywordService.getAll();
       setKeywords(data);
-      setIsDemo(false);
     } catch {
-      setIsDemo(true);
       setKeywords([]);
     } finally {
       setLoading(false);
@@ -170,23 +165,7 @@ export function Keywords() {
         </p>
       </header>
 
-      {/* Status / demo banner */}
-      {isDemo ? (
-        <div className="demo-banner" style={{ marginBottom: 20 }}>
-          Backend no disponible — no hay keywords reales.
-          <button onClick={loadKeywords} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--clr-warning)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <RefreshCw size={11} /> Reintentar
-          </button>
-        </div>
-      ) : !loading && (
-        <div className="status-banner">
-          <span className="status-banner-dot" />
-          {keywords.length} keywords cargadas desde el backend
-          <button onClick={loadKeywords} className="status-banner-btn">
-            <RefreshCw size={11} /> Actualizar
-          </button>
-        </div>
-      )}
+
 
       {/* Search bar */}
       {!loading && keywords.length > 0 && (
@@ -252,7 +231,6 @@ export function Keywords() {
                   key={kw.id}
                   kw={kw}
                   idx={i}
-                  maxFreq={filtered.length}
                   onDelete={handleDelete}
                 />
               ))}
