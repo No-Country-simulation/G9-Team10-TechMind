@@ -1,6 +1,6 @@
 # 🗺️ TechMind: Área de Datos (Documentación Final)
 
-Bienvenidos al repositorio central del equipo de Data. Este documento sirve como documentación final para entender cómo transformamos texto crudo en un "Cerebro" de Inteligencia Artificial que alimentará a toda la aplicación.
+Bienvenidos al repositorio central del equipo de Data. Este documento sirve como documentación final para entender cómo transformamos texto crudo en un "Cerebro" de Inteligencia Artificial de alto rendimiento que alimenta a toda la aplicación.
 
 ---
 
@@ -9,30 +9,30 @@ Bienvenidos al repositorio central del equipo de Data. Este documento sirve como
 Para trabajar de forma ágil y profesional, dividimos la responsabilidad de la ciencia de datos en áreas especializadas:
 
 - **Ingeniería de Datos:** Especialistas en Data Wrangling y Limpieza de Datos. Encargados de sanitizar el texto y dejar los datos legibles para la IA.
-- **Machine Learning:** Especialistas en modelos predictivos y matemáticas. Encargados de entrenar los modelos TF-IDF, algoritmos de clasificación y motores de Similitud del Coseno.
-- **Arquitectura e Integración:** Especialistas en Arquitectura de Datos e Integración de IA. Encargados de la recolección inicial, conexión con LLMs (Prompt Engineering) y despliegue de la API final.
+- **Machine Learning:** Especialistas en modelos matemáticos y NLP. Encargados de la vectorización de texto utilizando modelos ONNX locales cuantizados y motores de Similitud del Coseno.
+- **Arquitectura e Integración:** Especialistas en Arquitectura de Datos e Integración de IA. Encargados de la recolección inicial, conexión con LLMs (Groq - Llama 3.1) vía *Prompt Engineering*, y diseño de la API asíncrona final.
 
 ---
 
 ## 📊 Diagrama General del Flujo de Trabajo
 
-Este diagrama explica de forma sencilla cómo viajan los datos desde la recolección hasta llegar al servidor de Backend, para que cualquier miembro del proyecto lo pueda entender.
+Este diagrama explica de forma sencilla cómo viajan los datos desde la recolección hasta llegar al servidor de Backend.
 
 ```mermaid
 graph TD
     subgraph Fase0 [Fase 0 - Preparación del Cerebro]
-        A["Datos Crudos (1000 docs)"] -->|"Regex & Filtrado"| B["Datos Limpios"]
-        B -->|"Entrenamiento ML"| C[("Modelo Matemático .joblib")]
+        A["Datos Crudos (1000 docs)"] -->|"Limpieza y EDA"| B["Datos Limpios"]
+        B -->|"Vectorización ONNX"| C[("Matriz de Embeddings .npy")]
     end
 
-    subgraph Produccion [Fase de Producción - La Micro-API]
-        D["Petición desde Spring Boot"] --> E{"API FastAPI"}
+    subgraph Produccion [Fase de Producción - La Micro-API FastAPI]
+        D["Petición asíncrona desde Backend Java"] --> E{"API FastAPI (Async)"}
         
-        E -->|"1. /analizar_texto"| F["Modelo Clásico + LLM Gemini"]
+        E -->|"1. POST /analyze"| F["Motor Groq (Llama 3.1 8B)"]
         F --> G["JSON: Categoría, Dificultad, Keywords"]
         
-        E -->|"2. /buscar_parecido"| H["Matemática: Similitud del Coseno"]
-        H --> I["JSON: Top 3 IDs Relacionados"]
+        E -->|"2. POST /search & /recommend"| H["Matemática: Similitud del Coseno (Local)"]
+        H --> I["JSON: Top K Documentos Relacionados"]
     end
 ```
 
@@ -40,24 +40,26 @@ graph TD
 
 ### Fase 1: Ingesta de Datos
 
-- **Objetivo:** Evitar el "arranque en frío" del proyecto recolectando 1000 documentos técnicos (GitHub, arXiv, etc.).
+- **Objetivo:** Evitar el "arranque en frío" del proyecto recolectando 1000 documentos técnicos.
 - **Resultado:** Archivo `dataset_techmind_raw.csv`.
 
 ### Fase 2: Limpieza de Datos / Data Wrangling
 
-- **Objetivo:** Preparar un dataset de alta calidad mediante auditoría, limpieza, normalización y enriquecimiento del contenido, eliminando ruido (HTML, URLs, duplicados y registros vacíos), generando identificadores únicos (doc_id) y metadatos necesarios para asegurar la consistencia del pipeline y facilitar la generación de embeddings.
-- **Resultado:** Dataset limpio, validado y enriquecido (dataset_techmind_ready.csv), listo para la vectorización y como punto de partida del motor de búsqueda semántica utilizado en las Fases 3 y 4.
+- **Objetivo:** Preparar un dataset de alta calidad mediante auditoría, limpieza, normalización y enriquecimiento del contenido. Eliminación de ruido (HTML, URLs, duplicados) y generación de identificadores únicos (doc_id).
+- **Resultado:** Dataset limpio, validado y enriquecido (`dataset_techmind_ready.csv`), sirviendo como base de conocimiento matemática.
 
-### Fase 3 y 4: Enfoque Híbrido (Machine Learning + LLM)
+### Fase 3 y 4: Enfoque Híbrido Avanzado (ONNX + Groq LLM)
 
-- **Decisión de Arquitectura:** En lugar de entrenar una Regresión Logística supervisada que requiere de miles de etiquetas manuales, optamos por un modelo **Híbrido**.
-- **Clasificación (LLM):** Integramos la API de Gemini para analizar semánticamente el texto y extraer **Categoría, Dificultad y Palabras Clave (Tags)** de manera automática, sin "arranque en frío".
-- **Búsqueda Semántica / Recomendación (ML Clásico):** Tomamos los datos limpios de la Fase 2, los pasamos por un pipeline de `TfidfVectorizer` y calculamos la **Similitud del Coseno** de forma 100% local, devolviendo los documentos más parecidos al instante y sin incurrir en costos de API.
+- **Decisión de Arquitectura:** En lugar de depender de regresiones logísticas rígidas, optamos por un **Modelo Híbrido de Alto Rendimiento**.
+- **Clasificación (LLM ultrarrápido):** Reemplazamos Gemini por la API de **Groq** usando **Llama 3.1 8B**. Esto redujo los tiempos de inferencia de 4.27s a **0.79s**, permitiendo extraer Categoría, Dificultad y Palabras Clave en tiempo real.
+- **Búsqueda Semántica (ML Local):** Implementamos un motor de vectorización multilingüe local usando **ONNX Runtime Quantizado**. Calculamos la Similitud del Coseno matemáticamente mediante matrices NumPy ultra rápidas, devolviendo documentos relacionados sin depender de internet ni de costes de API.
 
-### Fase 5: API Final Modular
+### Fase 5: API Final Modular y Asíncrona (Producción)
 
-- **Objetivo:** Encapsular los modelos matemáticos y Gemini dentro de una API web rápida (FastAPI).
-- **Decisión de Arquitectura (Importante):** No exponer nuestra API a internet público. Será una "Micro-API" de uso interno. El Backend será el único autorizado a consumir esta API internamente para obtener los cálculos.
-- **Estado Actual:** Estructura construida y endpoints conectados a los modelos reales. 
-  1. `/analizar_texto`: Conectado a Gemini.
-  2. `/buscar_parecido`: Conectado al motor local TF-IDF.
+- **Objetivo:** Encapsular los modelos matemáticos y la conexión a Groq dentro de una API web concurrente usando FastAPI.
+- **Seguridad y Diseño:** La API no se expone a internet público (se despliega en una subred privada de Oracle Cloud). El Backend (Spring Boot) es el único consumidor autorizado.
+- **Resiliencia (Fast-Fail):** La API cuenta con mecanismos de validación `Pydantic` estrictos, políticas de reintentos (`Tenacity`) y un sistema *Fast-Fail* que aborta el arranque de los contenedores Docker si detecta anomalías en el sistema de archivos (ej. modelos faltantes).
+- **Estado Actual:** 100% Finalizado. Todo el sistema está programado con `async/await` para no bloquear el *Event Loop* bajo carga máxima.
+  1. `/api/v1/analyze`: Clasificación con Groq.
+  2. `/api/v1/search`: Búsqueda por texto natural (ONNX).
+  3. `/api/v1/recommend`: Recomendación cruzada de documentos (NumPy).

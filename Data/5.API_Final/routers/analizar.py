@@ -17,9 +17,9 @@ def generate_doc_id(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 @router.post("/analyze", response_model=AnalisisResponse)
-def analizar_texto(entrada: TextoInput):
+async def analizar_texto(entrada: TextoInput):
     """
-    Recibe un texto nuevo, lo clasifica y extrae metadata (Gemini).
+    Recibe un texto nuevo, lo clasifica y extrae metadata (Groq/Llama 3.1).
     Responde estrictamente con el contrato esperado por Spring Boot.
     """
     trace_id = str(uuid.uuid4())
@@ -41,10 +41,10 @@ def analizar_texto(entrada: TextoInput):
             doc_id=doc_id
         )
         
-    # Llamada real a Gemini (Fase 5.3)
-    from services.gemini_service import extraer_metadata
-    logger.info(f"[Trace: {trace_id}] Solicitando clasificación a Gemini API...")
-    metadata_gemini = extraer_metadata(entrada.texto)
+    # Llamada real a Groq (Fase 5.3)
+    from services.groq_service import extraer_metadata
+    logger.info(f"[Trace: {trace_id}] Solicitando clasificación a Groq API...")
+    metadata_gemini = await extraer_metadata(entrada.texto)
     
     logger.info(f"[Trace: {trace_id}] Análisis completado. Categoría asignada: {metadata_gemini.get('categoria')}")
     return AnalisisResponse(

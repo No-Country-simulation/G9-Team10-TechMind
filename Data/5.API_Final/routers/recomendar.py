@@ -3,7 +3,7 @@ from models.schemas import SearchRequest, RecommendRequest, RecomendacionRespons
 from services import ml_service
 
 import uuid
-from core.config import USE_MOCK
+from core import config
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ def buscar_semantica(entrada: SearchRequest):
     """
     trace_id = str(uuid.uuid4())
     
-    if USE_MOCK:
+    if config.USE_MOCK:
         mock_data = [
             DocumentoSimilitud(doc_id="mock-1", title="Mock Document", source_type="PDF", similarity_score=0.99, preview="Mock text"),
         ]
@@ -35,7 +35,7 @@ def buscar_parecido(entrada: RecommendRequest):
     """
     trace_id = str(uuid.uuid4())
     
-    if USE_MOCK:
+    if config.USE_MOCK:
         mock_data = [
             DocumentoSimilitud(doc_id="mock-2", title="Related Mock", source_type="TXT", similarity_score=0.88, preview="Related mock text"),
         ]
