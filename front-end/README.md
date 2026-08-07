@@ -208,7 +208,6 @@ front-end/
 │   ├── utils/
 │   │   ├── constants.ts     # Rutas, colores, endpoints
 │   │   ├── i18n.ts          # Traducciones ES/EN/PT
-│   │   └── mockData.ts      # Datos de demo
 │   └── index.css            # Design system + tema oscuro
 ├── vite.config.ts           # Proxy /api → localhost:8080
 └── package.json
@@ -253,3 +252,15 @@ pnpm lint       # Linter (oxlint)
 | `recharts` 3 | Gráficos del dashboard |
 | `lucide-react` | Iconos |
 | `vite` 8 | Build tool |
+
+---
+
+## Últimos Cambios (Changelog)
+
+### Optimización y Conexión Real (Agosto 2026)
+- **Paginación Universal**: Implementada en Biblioteca (`History.tsx`), Mis Documentos (`MyDocuments.tsx`) y Búsqueda (`Search.tsx`), manejando grandes volúmenes de datos de manera eficiente.
+- **Limpieza de Datos Mock**: Eliminación completa de `mockData.ts`, el componente `DemoBanner` y variables relacionadas (`isDemo`, etc.). El frontend ahora depende 100% de la API en tiempo real del backend en Spring Boot.
+- **Prevención de Duplicados**: El módulo de Análisis (`Analyze.tsx`) ahora consulta si un documento ya existe mediante su título antes de crearlo, cargando el existente para ahorrar peticiones a la IA y evitar duplicados.
+- **Búsqueda Semántica Optimizada**: La vista de búsqueda procesa correctamente los resultados del fallback semántico (IA), filtrando IDs falsos y renderizando tarjetas completas (`DocumentCard`) con métricas de similitud.
+- **Gráficos Dinámicos**: El Dashboard (`Dashboard.tsx`) ahora calcula la actividad semanal basándose exclusivamente en el número de documentos reales ingresados.
+- **Limpieza de Código**: Corrección de advertencias (warnings) de React/ESLint relacionadas con variables declaradas y no utilizadas tras la eliminación de los datos de demo.
