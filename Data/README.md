@@ -45,8 +45,8 @@ graph TD
 
 ### Fase 2: Limpieza de Datos / Data Wrangling
 
-- **Objetivo:** Transformar el texto ruidoso limpiando etiquetas HTML, URLs y unificando formatos para que la máquina no se confunda.
-- **Resultado:** Archivo de datos limpios listo para vectorizar.
+- **Objetivo:** Preparar un dataset de alta calidad mediante auditoría, limpieza, normalización y enriquecimiento del contenido, eliminando ruido (HTML, URLs, duplicados y registros vacíos), generando identificadores únicos (doc_id) y metadatos necesarios para asegurar la consistencia del pipeline y facilitar la generación de embeddings.
+- **Resultado:** Dataset limpio, validado y enriquecido (dataset_techmind_ready.csv), listo para la vectorización y como punto de partida del motor de búsqueda semántica utilizado en las Fases 3 y 4.
 
 ### Fase 3 y 4: Enfoque Híbrido (Machine Learning + LLM)
 
