@@ -63,3 +63,31 @@ graph TD
   1. `/api/v1/analyze`: Clasificación con Groq.
   2. `/api/v1/search`: Búsqueda por texto natural (ONNX).
   3. `/api/v1/recommend`: Recomendación cruzada de documentos (NumPy).
+
+---
+
+## 🛠️ Instrucciones para Desarrolladores (Setup Local)
+
+Debido a los límites de tamaño de GitHub y a las mejores prácticas de Git, los modelos matemáticos finales (`.onnx` y `.npy`) están ignorados en el `.gitignore`. Si clonaste este repositorio y deseas correr la API localmente, tienes dos opciones:
+
+### Opción A: Modo MOCK (Prueba de Integración Rápida)
+Ideal para los desarrolladores de Frontend y Backend que solo quieren validar la comunicación y recibir los JSON correctos sin ejecutar los pesados modelos de Inteligencia Artificial.
+1. Ve a la carpeta `Data/5.API_Final`.
+2. Renombra `.env.example` a `.env` (o crea uno nuevo).
+3. Agrega la línea: `USE_MOCK=True`
+4. Al correr FastAPI, el sistema de protección *Fast-Fail* se desactivará y la API arrancará al instante simulando las respuestas.
+
+### Opción B: Generación Local de la Inteligencia Artificial
+Ideal si deseas probar el motor de IA real en tu computadora. Necesitarás generar los archivos binarios pesados localmente.
+1. Ve a la carpeta `Data/5.API_Final`.
+2. Activa tu entorno virtual e instala los requerimientos (`pip install -r requirements.txt`).
+3. Ejecuta el script de cuantización (descarga el modelo base y lo optimiza a ONNX):
+   ```bash
+   python scripts/quantize_model.py
+   ```
+4. Ejecuta el script de *embeddings* (lee el dataset de la Fase 2 y calcula las posiciones vectoriales matemáticas de todos los documentos, puede tardar unos minutos):
+   ```bash
+   python scripts/generate_embeddings.py
+   ```
+5. Asegúrate de tener tu `.env` con tu `GROQ_API_KEY` y con `USE_MOCK=False`.
+6. ¡Listo! Ya puedes iniciar la API real con `uvicorn main:app`.
