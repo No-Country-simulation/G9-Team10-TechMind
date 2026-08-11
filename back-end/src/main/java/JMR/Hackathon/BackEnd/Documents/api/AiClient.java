@@ -3,6 +3,8 @@ package JMR.Hackathon.BackEnd.Documents.api;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -21,6 +23,12 @@ public class AiClient {
     public AiClient(@Value("${ai.api.url:http://localhost:8000}") String aiBaseUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(aiBaseUrl)
+                .build();
+    }
+
+    public AiClient() {
+        this.restClient = RestClient.builder()
+                .baseUrl("http://localhost:8000")
                 .build();
     }
 
