@@ -78,25 +78,25 @@ public class DocumentController {
     }
 
 
-    @DeleteMapping("/id/{id}")
-    public void deleteDocumentById(@PathVariable
-                                       @Min(value = 1,message = "El ID debe ser mayor que 0")
-                                       @NotNull(message = "El ID no puede ser nulo")
-                                       Long id) {
-
-    service.deleteDocumentById(id);
-
-    }
-
-
-    @DeleteMapping("/title/{title}")
-    public void deleteDocumentByTitle(@PathVariable
-                                          @NotBlank(message = "El titulo no puede estar vacio")
-                                          String title) {
-
-      service.deleteDocumentByTitle(title);
-
-    }
+//    @DeleteMapping("/id/{id}")
+//    public void deleteDocumentById(@PathVariable
+//                                       @Min(value = 1,message = "El ID debe ser mayor que 0")
+//                                       @NotNull(message = "El ID no puede ser nulo")
+//                                       Long id) {
+//
+//    service.deleteDocumentById(id);
+//
+//    }
+//
+//
+//    @DeleteMapping("/title/{title}")
+//    public void deleteDocumentByTitle(@PathVariable
+//                                          @NotBlank(message = "El titulo no puede estar vacio")
+//                                          String title) {
+//
+//      service.deleteDocumentByTitle(title);
+//
+//    }
 
 
 }

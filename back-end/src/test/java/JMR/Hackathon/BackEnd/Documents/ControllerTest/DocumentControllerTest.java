@@ -339,29 +339,29 @@ class DocumentControllerTest {
     // DELETE /document/title/{title}
     // ─────────────────────────────────────────────
 
-    @Test
-    @DisplayName("DELETE /document/title/{title} → 200 cuando el documento existe")
-    void shouldReturn200_whenDeleteByTitle() throws Exception {
-        doNothing().when(service).deleteDocumentByTitle("Spring Boot");
-
-        mockMvc.perform(delete("/document/title/Spring Boot"))
-                .andExpect(status().isOk());
-
-        verify(service).deleteDocumentByTitle("Spring Boot");
-    }
-
-    @Test
-    @DisplayName("DELETE /document/title/{title} → 404 cuando el título no existe")
-    void shouldReturn404_whenDeleteByTitleNotFound() throws Exception {
-        doThrow(new DocumentNotFoundException("Titulo Inexistente"))
-                .when(service).deleteDocumentByTitle("Titulo Inexistente");
-
-        mockMvc.perform(delete("/document/title/Titulo Inexistente"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
-
-        verify(service).deleteDocumentByTitle("Titulo Inexistente");
-    }
+//    @Test
+//    @DisplayName("DELETE /document/title/{title} → 200 cuando el documento existe")
+//    void shouldReturn200_whenDeleteByTitle() throws Exception {
+//        doNothing().when(service).deleteDocumentByTitle("Spring Boot");
+//
+//        mockMvc.perform(delete("/document/title/Spring Boot"))
+//                .andExpect(status().isOk());
+//
+//        verify(service).deleteDocumentByTitle("Spring Boot");
+//    }
+//
+//    @Test
+//    @DisplayName("DELETE /document/title/{title} → 404 cuando el título no existe")
+//    void shouldReturn404_whenDeleteByTitleNotFound() throws Exception {
+//        doThrow(new DocumentNotFoundException("Titulo Inexistente"))
+//                .when(service).deleteDocumentByTitle("Titulo Inexistente");
+//
+//        mockMvc.perform(delete("/document/title/Titulo Inexistente"))
+//                .andExpect(status().isNotFound())
+//                .andExpect(jsonPath("$.status").value(404));
+//
+//        verify(service).deleteDocumentByTitle("Titulo Inexistente");
+//    }
 
     // ─────────────────────────────────────────────
     // Helper privado compartido
