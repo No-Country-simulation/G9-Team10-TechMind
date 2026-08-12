@@ -70,6 +70,13 @@ public class DocumentController {
 
     }
 
+    @GetMapping("/recommend/{traceid}")
+    public List<DocumentResponse> getRecommendDocuments(String traceid) {
+
+        return service.recommend(traceid);
+
+    }
+
 
     @DeleteMapping("/id/{id}")
     public void deleteDocumentById(@PathVariable

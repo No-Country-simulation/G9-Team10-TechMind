@@ -177,6 +177,19 @@ public class DocumentService {
 
     }
 
+
+    public List<DocumentResponse> recommend(String traceId) {
+
+        //llamar a python aiclient
+
+        //buscar los documents recomendados
+
+        //devolverlos en list
+
+    return null;
+
+    }
+
     //  Convierte el string de nivel que viene de Python al enum Nivel.
      
     private Nivel parseNivel(String nivelStr) {
