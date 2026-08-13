@@ -2,6 +2,7 @@ package JMR.Hackathon.BackEnd.Documents.ApiTest;
 
 import JMR.Hackathon.BackEnd.Documents.api.AiClient;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecomendacionResponse;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -166,5 +167,133 @@ class AiClientTest {
         assertNotNull(result);
         assertNotNull(result.keywords());
         assertTrue(result.keywords().isEmpty());
+    }
+
+    // ─────────────────────────────────────────────
+    // search() — flujo feliz
+    // ─────────────────────────────────────────────
+
+    private static final String SEARCH_URL    = BASE_URL + "/api/v1/search";
+    private static final String RECOMMEND_URL = BASE_URL + "/api/v1/recommend";
+
+    private static final String RECOMENDACION_RESPONSE_JSON = """
+            {
+              "resultados": [
+                {
+                  "doc_id":           "doc-001",
+                  "title":            "Introducción a Java",
+                  "source_type":      "PDF",
+                  "similarity_score": 0.97,
+                  "preview":          "Java es un lenguaje de programación orientado a objetos..."
+                },
+                {
+                  "doc_id":           "doc-002",
+                  "title":            "Spring Boot Avanzado",
+                  "source_type":      "TXT",
+                  "similarity_score": 0.88,
+                  "preview":          "Spring Boot facilita la creación de aplicaciones..."
+                }
+              ],
+              "trace_id": "trace-search-1"
+            }
+            """;
+
+    @Test
+    @DisplayName("search() → deserializa correctamente la lista de resultados cuando FastAPI responde 200")
+    void shouldReturnResults_whenSearchReturns200() {
+        mockServer.expect(requestTo(SEARCH_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andRespond(withSuccess(RECOMENDACION_RESPONSE_JSON, MediaType.APPLICATION_JSON));
+
+        RecomendacionResponse result = aiClient.search("programación en Java", 5);
+
+        assertNotNull(result);
+        assertEquals("trace-search-1", result.traceId());
+        assertEquals(2, result.resultados().size());
+        assertEquals("doc-001",              result.resultados().get(0).docId());
+        assertEquals("Introducción a Java",  result.resultados().get(0).title());
+        assertEquals(0.97f, result.resultados().get(0).similarityScore(), 0.001f);
+        assertEquals("PDF",                  result.resultados().get(0).sourceType());
+
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("search() → lanza AiServiceException cuando FastAPI responde 500")
+    void shouldThrow_whenSearchReturns500() {
+        mockServer.expect(requestTo(SEARCH_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"detail\": \"model not loaded\"}"));
+
+        AiServiceException ex = assertThrows(AiServiceException.class,
+                () -> aiClient.search("texto de prueba", 3));
+
+        assertTrue(ex.getMessage().contains("500"));
+        assertTrue(ex.getMessage().contains("error interno"));
+    }
+
+    @Test
+    @DisplayName("search() → lanza AiServiceException cuando FastAPI no está disponible")
+    void shouldThrow_whenSearchServiceIsDown() {
+        AiClient clientDown = new AiClient("http://localhost:19998");
+
+        AiServiceException ex = assertThrows(AiServiceException.class,
+                () -> clientDown.search("texto de prueba", 3));
+
+        assertTrue(ex.getMessage().contains("No se pudo conectar"));
+    }
+
+    // ─────────────────────────────────────────────
+    // recommend() — flujo feliz
+    // ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("recommend() → deserializa correctamente la lista de resultados cuando FastAPI responde 200")
+    void shouldReturnResults_whenRecommendReturns200() {
+        mockServer.expect(requestTo(RECOMMEND_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andRespond(withSuccess(RECOMENDACION_RESPONSE_JSON, MediaType.APPLICATION_JSON));
+
+        RecomendacionResponse result = aiClient.recommend("doc-abc-123", 3);
+
+        assertNotNull(result);
+        assertEquals("trace-search-1", result.traceId());
+        assertEquals(2, result.resultados().size());
+        assertEquals("doc-002",                result.resultados().get(1).docId());
+        assertEquals("Spring Boot Avanzado",   result.resultados().get(1).title());
+        assertEquals(0.88f, result.resultados().get(1).similarityScore(), 0.001f);
+
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("recommend() → lanza AiServiceException cuando FastAPI responde 404 (doc_id no encontrado)")
+    void shouldThrow_whenRecommendReturns404() {
+        mockServer.expect(requestTo(RECOMMEND_URL))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"detail\": \"documento no encontrado\"}"));
+
+        AiServiceException ex = assertThrows(AiServiceException.class,
+                () -> aiClient.recommend("doc-inexistente", 3));
+
+        assertTrue(ex.getMessage().contains("404"));
+        assertTrue(ex.getMessage().contains("rechazó"));
+    }
+
+    @Test
+    @DisplayName("recommend() → lanza AiServiceException cuando FastAPI no está disponible")
+    void shouldThrow_whenRecommendServiceIsDown() {
+        AiClient clientDown = new AiClient("http://localhost:19997");
+
+        AiServiceException ex = assertThrows(AiServiceException.class,
+                () -> clientDown.recommend("doc-abc", 3));
+
+        assertTrue(ex.getMessage().contains("No se pudo conectar"));
     }
 }

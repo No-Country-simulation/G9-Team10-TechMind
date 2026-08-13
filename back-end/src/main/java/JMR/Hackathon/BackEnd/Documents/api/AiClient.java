@@ -2,6 +2,9 @@ package JMR.Hackathon.BackEnd.Documents.api;
 
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecomendacionResponse;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecommendRequest;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.SearchRequest;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -83,6 +86,98 @@ public class AiClient {
             // Respuesta HTTP inesperada no cubierta por onStatus()
             throw new AiServiceException(
                     "Respuesta inesperada del microservicio de análisis (HTTP " + e.getStatusCode().value() + ").", e
+            );
+        }
+    }
+
+    /**
+     * Llama a POST /api/v1/search del microservicio Python.
+     * Busca documentos semánticamente similares a un texto libre.
+     *
+     * @param query Texto de búsqueda en lenguaje natural
+     * @param topK  Número máximo de resultados a retornar
+     * @throws AiServiceException si el microservicio no está disponible o responde con error.
+     */
+    public RecomendacionResponse search(String query, int topK) {
+        SearchRequest request = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .build();
+
+        try {
+            return restClient.post()
+                    .uri("/api/v1/search")
+                    .body(request)
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError(), (req, res) -> {
+                        throw new AiServiceException(
+                                "El microservicio de búsqueda rechazó la solicitud (HTTP " + res.getStatusCode().value() + "). " +
+                                "Verifica que la query sea válida."
+                        );
+                    })
+                    .onStatus(status -> status.is5xxServerError(), (req, res) -> {
+                        throw new AiServiceException(
+                                "El microservicio de búsqueda reportó un error interno (HTTP " + res.getStatusCode().value() + "). " +
+                                "Intenta nuevamente más tarde."
+                        );
+                    })
+                    .body(RecomendacionResponse.class);
+
+        } catch (AiServiceException e) {
+            throw e;
+        } catch (ResourceAccessException e) {
+            throw new AiServiceException(
+                    "No se pudo conectar al microservicio de búsqueda. Verifica que el servicio esté activo.", e
+            );
+        } catch (RestClientResponseException e) {
+            throw new AiServiceException(
+                    "Respuesta inesperada del microservicio de búsqueda (HTTP " + e.getStatusCode().value() + ").", e
+            );
+        }
+    }
+
+    /**
+     * Llama a POST /api/v1/recommend del microservicio Python.
+     * Busca documentos similares a un documento existente usando su doc_id.
+     *
+     * @param docId doc_id del documento base para la recomendación
+     * @param topK  Número máximo de resultados a retornar
+     * @throws AiServiceException si el microservicio no está disponible o responde con error.
+     */
+    public RecomendacionResponse recommend(String docId, int topK) {
+        RecommendRequest request = RecommendRequest.builder()
+                .docId(docId)
+                .topK(topK)
+                .build();
+
+        try {
+            return restClient.post()
+                    .uri("/api/v1/recommend")
+                    .body(request)
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError(), (req, res) -> {
+                        throw new AiServiceException(
+                                "El microservicio de recomendación rechazó la solicitud (HTTP " + res.getStatusCode().value() + "). " +
+                                "Verifica que el doc_id sea válido."
+                        );
+                    })
+                    .onStatus(status -> status.is5xxServerError(), (req, res) -> {
+                        throw new AiServiceException(
+                                "El microservicio de recomendación reportó un error interno (HTTP " + res.getStatusCode().value() + "). " +
+                                "Intenta nuevamente más tarde."
+                        );
+                    })
+                    .body(RecomendacionResponse.class);
+
+        } catch (AiServiceException e) {
+            throw e;
+        } catch (ResourceAccessException e) {
+            throw new AiServiceException(
+                    "No se pudo conectar al microservicio de recomendación. Verifica que el servicio esté activo.", e
+            );
+        } catch (RestClientResponseException e) {
+            throw new AiServiceException(
+                    "Respuesta inesperada del microservicio de recomendación (HTTP " + e.getStatusCode().value() + ").", e
             );
         }
     }
