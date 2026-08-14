@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BarChart2, Hash, Trash2, BookOpen, X } from 'lucide-react';
+import { BarChart2, Hash, Trash2, BookOpen, X, FileText, Tag } from 'lucide-react';
 import { keywordService, documentService } from '@/services/api';
 import type { KeywordResponse, DocumentResponse } from '@/types';
 import './HistoryKeywords.css';
@@ -72,6 +72,7 @@ export function Keywords() {
   const [kwDocs, setKwDocs] = useState<DocumentResponse[]>([]);
   const [kwDocsLoading, setKwDocsLoading] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -348,18 +349,20 @@ export function Keywords() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {kwDocs.map(doc => (
-                  <div key={doc.docId} style={{
-                    background: 'var(--clr-surface)',
-                    border: '1px solid var(--clr-border)',
-                    borderRadius: 8,
-                    padding: '8px 12px',
-                    fontSize: '0.8rem',
-                  }}>
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{doc.title}</div>
-                    <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.72rem' }}>
+                  <button
+                    key={doc.docId}
+                    onClick={() => setSelectedDoc(doc)}
+                    className="kw-doc-card-btn"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <FileText size={12} style={{ color: 'var(--clr-primary)', flexShrink: 0 }} />
+                      <span style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--clr-text)', textAlign: 'left', lineHeight: 1.3 }}>{doc.title}</span>
+                    </div>
+                    <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.72rem', paddingLeft: 18 }}>
                       {doc.categoria} · {Math.round(doc.probabilidadCategoria * 100)}%
                     </div>
-                  </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--clr-primary)', paddingLeft: 18, marginTop: 2, opacity: 0.7 }}>Click para leer →</div>
+                  </button>
                 ))}
               </div>
             )}
@@ -376,6 +379,58 @@ export function Keywords() {
           >
             <Trash2 size={13} /> Eliminar keyword
           </button>
+        </div>
+      )}
+
+      {/* ── Modal central: contenido completo del documento ── */}
+      {selectedDoc && (
+        <div
+          className="doc-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedDoc(null); }}
+        >
+          <div className="doc-modal">
+            {/* Header */}
+            <div className="doc-modal-header">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                <div className="doc-modal-icon">
+                  <FileText size={22} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 className="doc-modal-title">{selectedDoc.title}</h2>
+                  <div className="doc-modal-meta">
+                    <span className="doc-modal-cat">{selectedDoc.categoria}</span>
+                    <span className="doc-modal-conf">{Math.round(selectedDoc.probabilidadCategoria * 100)}% confianza</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDoc(null)}
+                className="doc-modal-close"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Keywords */}
+            {selectedDoc.keywords && selectedDoc.keywords.length > 0 && (
+              <div className="doc-modal-keywords">
+                <Tag size={13} style={{ color: 'var(--clr-secondary)', flexShrink: 0 }} />
+                {selectedDoc.keywords.map(kw => (
+                  <span key={kw} className="doc-modal-kw-chip">{kw}</span>
+                ))}
+              </div>
+            )}
+
+            {/* Contenido */}
+            <div className="doc-modal-body">
+              {selectedDoc.content ? (
+                <p className="doc-modal-content">{selectedDoc.content}</p>
+              ) : (
+                <p style={{ color: 'var(--clr-text-muted)', fontStyle: 'italic', fontSize: '0.88rem' }}>Sin contenido disponible.</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </main>
