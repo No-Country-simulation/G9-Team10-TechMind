@@ -47,6 +47,11 @@
 }
 
 @media (max-width: 768px) {
-  .mydocs-page { padding: 24px 20px; }
-  .mydocs-grid { grid-template-columns: 1fr; }
+  .mydocs-page {
+    padding: 24px 20px;
+  }
+
+  .mydocs-grid {
+    grid-template-columns: 1fr;
+  }
 }

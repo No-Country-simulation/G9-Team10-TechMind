@@ -3,11 +3,13 @@ import type { Language } from '@/context/SettingsContext';
 const messages = {
   es: {
     nav: {
+      welcome: 'Bienvenida',
       home: 'Inicio',
       search: 'Búsqueda',
       library: 'Biblioteca',
       recommendations: 'Recomendaciones',
       myDocs: 'Mis documentos',
+      analyze: 'Analizar',
       dashboard: 'Dashboard',
       settings: 'Configuración',
       viewProfile: 'Ver perfil →',
@@ -43,11 +45,13 @@ const messages = {
   },
   en: {
     nav: {
+      welcome: 'Welcome',
       home: 'Home',
       search: 'Search',
       library: 'Library',
       recommendations: 'Recommendations',
       myDocs: 'My documents',
+      analyze: 'Analyze',
       dashboard: 'Dashboard',
       settings: 'Settings',
       viewProfile: 'View profile →',
@@ -83,11 +87,13 @@ const messages = {
   },
   pt: {
     nav: {
+      welcome: 'Boas-vindas',
       home: 'Início',
       search: 'Busca',
       library: 'Biblioteca',
       recommendations: 'Recomendações',
       myDocs: 'Meus documentos',
+      analyze: 'Analisar',
       dashboard: 'Dashboard',
       settings: 'Configurações',
       viewProfile: 'Ver perfil →',

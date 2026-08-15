@@ -138,18 +138,31 @@ export const documentService = {
 
   /**
    * Solicita al motor de IA los documentos más similares a un docId dado.
-   * GET /document/recommend/{docId}?topK=5
+   * POST /ai/recommend
    */
-  getRecommendations: (docId: string, topK = 5) =>
-    api.get<RecommendResponse>(`/document/recommend/${encodeURIComponent(docId)}`, { params: { topK } }),
+  getRecommendations: async (docId: string, topK = 5) => {
+    const res = await fetch('/ai/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doc_id: String(docId), top_k: topK })
+    });
+    if (!res.ok) throw new Error('Error al obtener recomendaciones');
+    return res.json() as Promise<RecommendResponse>;
+  },
 
   /**
    * Búsqueda semántica por texto libre usando el motor de IA.
-   * Se activa como fallback cuando no hay resultados por keyword o título.
-   * GET /document/search?query=...&topK=3
+   * POST /ai/search
    */
-  semanticSearch: (query: string, topK = 3) =>
-    api.get<RecommendResponse>('/document/search', { params: { query, topK } }),
+  semanticSearch: async (query: string, topK = 3) => {
+    const res = await fetch('/ai/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, top_k: topK })
+    });
+    if (!res.ok) throw new Error('Error en búsqueda semántica');
+    return res.json() as Promise<RecommendResponse>;
+  },
 };
 
 // ── Keyword Service ───────────────────────────────────────────────────────────

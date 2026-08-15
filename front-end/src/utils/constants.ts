@@ -4,6 +4,7 @@ export const APP_NAME = 'TechMind';
 export const APP_TAGLINE = 'Organización Inteligente del Conocimiento Técnico';
 
 export const ROUTES = {
+  WELCOME: '/welcome',
   HOME: '/inicio',
   SEARCH: '/busqueda',
   LIBRARY: '/biblioteca',

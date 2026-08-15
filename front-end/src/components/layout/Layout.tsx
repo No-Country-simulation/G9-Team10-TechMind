@@ -19,17 +19,18 @@ import { useTranslations } from '@/utils/i18n';
 import './Layout.css';
 
 const navItems = [
-  { to: ROUTES.HOME,            key: 'home' as const,            icon: Home },
-  { to: ROUTES.SEARCH,          key: 'search' as const,          icon: Search },
-  { to: ROUTES.LIBRARY,         key: 'library' as const,         icon: Library },
+  { to: ROUTES.HOME, key: 'home' as const, icon: Home },
+  { to: ROUTES.SEARCH, key: 'search' as const, icon: Search },
+  { to: ROUTES.LIBRARY, key: 'library' as const, icon: Library },
   { to: ROUTES.RECOMMENDATIONS, key: 'recommendations' as const, icon: Sparkles },
-  { to: ROUTES.MY_DOCS,         key: 'myDocs' as const,          icon: FileText },
-  { to: ROUTES.DASHBOARD,       key: 'dashboard' as const,       icon: LayoutDashboard },
-  { to: ROUTES.SETTINGS,        key: 'settings' as const,        icon: Settings },
+  { to: ROUTES.MY_DOCS, key: 'myDocs' as const, icon: FileText },
+  { to: ROUTES.ANALYZE, key: 'analyze' as const, icon: Brain },
+  { to: ROUTES.DASHBOARD, key: 'dashboard' as const, icon: LayoutDashboard },
+  { to: ROUTES.SETTINGS, key: 'settings' as const, icon: Settings },
 ];
 
 export function Layout() {
-  const { settings, userInitials } = useSettings();
+  const { settings } = useSettings();
   const t = useTranslations(settings.language);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -52,7 +53,7 @@ export function Layout() {
               </div>
             </div>
           </NavLink>
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(false)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)' }}
             title="Contraer menú"
@@ -78,23 +79,12 @@ export function Layout() {
           <img src={logoImg} alt="" />
         </div>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <div className="sidebar-user-avatar">{userInitials}</div>
-            <div className="sidebar-user-info">
-              <span className="sidebar-user-name">{settings.profile.name}</span>
-              <NavLink to={ROUTES.SETTINGS} className="sidebar-user-link">
-                {t.nav.viewProfile}
-              </NavLink>
-            </div>
-          </div>
-        </div>
       </aside>
 
       <div className="main-content">
         {!isSidebarOpen && (
-          <button 
-            className="menu-toggle-floating" 
+          <button
+            className="menu-toggle-floating"
             onClick={() => setIsSidebarOpen(true)}
             title="Abrir menú lateral"
           >

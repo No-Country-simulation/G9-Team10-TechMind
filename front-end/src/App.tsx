@@ -9,14 +9,17 @@ import { Settings } from '@pages/Settings';
 import { Dashboard } from '@pages/Dashboard';
 import { Analyze } from '@pages/Analyze';
 import { Keywords } from '@pages/Keywords';
+import { Welcome } from '@pages/Welcome';
 import { ROUTES } from '@/utils/constants';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path={ROUTES.WELCOME} element={<Welcome />} />
+        
         <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route index element={<Navigate to={ROUTES.WELCOME} replace />} />
           <Route path="inicio"           element={<Home />} />
           <Route path="busqueda"         element={<SearchPage />} />
           <Route path="biblioteca"       element={<History />} />
@@ -28,7 +31,7 @@ export default function App() {
           <Route path="keywords"         element={<Keywords />} />
           {/* Legacy redirects */}
           <Route path="history"  element={<Navigate to={ROUTES.LIBRARY} replace />} />
-          <Route path="*"        element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path="*"        element={<Navigate to={ROUTES.WELCOME} replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

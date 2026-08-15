@@ -29,6 +29,13 @@ export default defineConfig({
         secure: false,
         rewrite: (path: string) => path.replace(/^\/api/, ''),
       },
+      // Todas las llamadas a /ai/* se redirigen al backend Python
+      '/ai': {
+        target: 'http://localhost:8000/api/v1',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path: string) => path.replace(/^\/ai/, ''),
+      },
     },
   },
 })

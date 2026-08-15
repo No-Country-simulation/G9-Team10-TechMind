@@ -49,7 +49,11 @@ export function Home() {
       .then(docs => {
         if (docs.length > 0) {
           setTotalDocs(docs.length);
-          setRecent(docs.slice(0, 3).map(docToCard));
+          // Los más recientes son los últimos insertados en la base de datos
+          const recentDocs = [...docs].reverse().slice(0, 3);
+          setRecent(recentDocs.map(docToCard));
+          
+          // Las recomendaciones son las de mayor precisión (o puedes mezclar aleatoriamente las top)
           const top = [...docs]
             .sort((a, b) => b.probabilidadCategoria - a.probabilidadCategoria)
             .slice(0, 3)

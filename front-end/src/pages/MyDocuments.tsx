@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Plus, Upload, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { FileText, Plus, Upload, RefreshCw, Search, X } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
 import { Pagination } from '@/components/ui/Pagination';
 import { ROUTES } from '@/utils/constants';
@@ -28,14 +28,24 @@ export function MyDocuments() {
   const [loading, setLoading] = useState(true);
   const [searchTitle, setSearchTitle] = useState('');
   const [searchMode, setSearchMode] = useState<SearchMode>('all');
-  const [deleting, setDeleting] = useState<string | null>(null);
+
   const [searchError, setSearchError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
-  const totalPages = useMemo(() => Math.ceil(docs.length / PAGE_SIZE), [docs.length]);
+  const sortedDocs = useMemo(() => {
+    return [...docs].sort((a, b) => {
+      // Como el backend no devuelve timestamp, asumimos que el array original de la BD 
+      // viene ordenado ascendentemente por ID/inserción.
+      // Así que simplemente invertimos (desc) o mantenemos (asc).
+      return sortOrder === 'desc' ? -1 : 1;
+    });
+  }, [docs, sortOrder]);
+
+  const totalPages = useMemo(() => Math.ceil(sortedDocs.length / PAGE_SIZE), [sortedDocs.length]);
   const pagedDocs = useMemo(
-    () => docs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [docs, currentPage]
+    () => sortedDocs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [sortedDocs, currentPage]
   );
 
   const load = () => {
@@ -45,7 +55,7 @@ export function MyDocuments() {
     setSearchError(null);
     setCurrentPage(1);
     documentService.getAll()
-      .then(setDocs)
+      .then(data => setDocs([...data])) // Guardamos como viene de la BD para poder ordenar después
       .catch(() => setDocs([]))
       .finally(() => setLoading(false));
   };
@@ -81,19 +91,7 @@ export function MyDocuments() {
     }
   };
 
-  // Eliminar documento por Título
-  const handleDelete = async (doc: DocumentResponse) => {
-    if (!window.confirm(`¿Eliminar "${doc.title}"?`)) return;
-    setDeleting(doc.docId);
-    try {
-      await documentService.deleteByTitle(doc.title);
-      setDocs(prev => prev.filter(d => d.docId !== doc.docId));
-    } catch {
-      alert('Error al eliminar el documento.');
-    } finally {
-      setDeleting(null);
-    }
-  };
+  // Funcionalidad de eliminación deshabilitada porque el backend no expone el endpoint.
 
   return (
     <main className="mydocs-page">
@@ -142,13 +140,29 @@ export function MyDocuments() {
           <button
             type="button"
             onClick={() => { setSearchTitle(''); load(); }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--clr-text-muted)', display: 'flex', padding: 2 }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--clr-text-muted)', display: 'flex', padding: 2
+            }}
           >
             <X size={14} />
           </button>
         )}
         <button type="submit" className="btn btn-primary btn-sm">Buscar</button>
+
+        <select
+          value={sortOrder}
+          onChange={e => setSortOrder(e.target.value as 'desc' | 'asc')}
+          style={{
+            background: 'none', border: '1px solid var(--clr-border)',
+            color: 'var(--clr-text)', borderRadius: 'var(--radius-sm)',
+            padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer',
+            marginLeft: 'auto'
+          }}
+        >
+          <option value="desc">Más recientes primero</option>
+          <option value="asc">Más antiguos primero</option>
+        </select>
       </form>
 
       {/* Indicador de modo búsqueda */}
@@ -166,9 +180,11 @@ export function MyDocuments() {
       )}
 
       {searchError && (
-        <div style={{ color: 'var(--clr-danger)', fontSize: '0.82rem', marginBottom: 16,
+        <div style={{
+          color: 'var(--clr-danger)', fontSize: '0.82rem', marginBottom: 16,
           background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-          borderRadius: 8, padding: '10px 14px' }}>
+          borderRadius: 8, padding: '10px 14px'
+        }}>
           {searchError}
         </div>
       )}
@@ -190,27 +206,6 @@ export function MyDocuments() {
             {pagedDocs.map(doc => (
               <div key={doc.docId} style={{ position: 'relative' }}>
                 <DocumentCard {...docToCard(doc)} />
-                <button
-                  onClick={() => handleDelete(doc)}
-                  disabled={deleting === doc.docId}
-                  title="Eliminar documento"
-                  style={{
-                    position: 'absolute', top: 10, right: 10,
-                    background: 'rgba(239,68,68,0.1)',
-                    border: '1px solid rgba(239,68,68,0.25)',
-                    borderRadius: 6, padding: '4px 6px',
-                    color: 'var(--clr-danger)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center',
-                    opacity: deleting === doc.docId ? 0.5 : 0.7,
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = deleting === doc.docId ? '0.5' : '0.7')}
-                >
-                  {deleting === doc.docId
-                    ? <RefreshCw size={12} className="spin" />
-                    : <Trash2 size={12} />}
-                </button>
               </div>
             ))}
           </div>

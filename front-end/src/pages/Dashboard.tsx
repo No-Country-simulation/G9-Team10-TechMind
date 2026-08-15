@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
+  BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import {
   FileText, Layers, TrendingUp, Zap,
-  ArrowUpRight, ArrowDownRight, Clock, ArrowRight,
+  ArrowUpRight, ArrowDownRight, Clock, ArrowRight, X
 } from 'lucide-react';
 import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { documentService } from '@/services/api';
+import { documentService, keywordService } from '@/services/api';
 import type { DashboardStats, CategoryStat, KeywordStat, RecentActivity, DocumentResponse } from '@/types';
 import './Dashboard.css';
 
@@ -40,23 +40,32 @@ function useCountUp(target: number, duration = 1200) {
 
 /** Convierte DocumentResponse[] → DashboardStats */
 function computeStats(docs: DocumentResponse[]): DashboardStats {
-  const categorias = new Set(docs.map(d => d.categoria)).size;
+  const validCats = docs.map(d => d.categoria).filter(Boolean);
+  const categorias = new Set(validCats).size;
   const precision = docs.length
-    ? docs.reduce((acc, d) => acc + d.probabilidadCategoria, 0) / docs.length
+    ? docs.reduce((acc, d) => acc + (d.probabilidadCategoria || 0), 0) / docs.length
     : 0;
+  
+  const totalKeywords = new Set(docs.flatMap(d => d.keywords || [])).size;
+
   return {
     total_documentos: docs.length,
     categorias_activas: categorias,
     precision_promedio: precision * 100,
-    documentos_hoy: 0, // el backend no expone fecha de creación
+    documentos_hoy: 0, 
+    total_keywords: totalKeywords,
   };
 }
 
 /** Convierte DocumentResponse[] → CategoryStat[] */
 function computeCategories(docs: DocumentResponse[]): CategoryStat[] {
   const map: Record<string, number> = {};
-  docs.forEach(d => { map[d.categoria] = (map[d.categoria] ?? 0) + 1; });
-  const total = docs.length || 1;
+  docs.forEach(d => { 
+    if (d.categoria) {
+      map[d.categoria] = (map[d.categoria] ?? 0) + 1; 
+    }
+  });
+  const total = docs.filter(d => d.categoria).length || 1;
   return Object.entries(map)
     .sort((a, b) => b[1] - a[1])
     .map(([cat, count]) => ({
@@ -81,7 +90,9 @@ function computeKeywords(docs: DocumentResponse[]): KeywordStat[] {
 
 /** Calcula actividad reciente real */
 function computeActivity(docs: DocumentResponse[]): RecentActivity[] {
-  return docs.slice(0, 6).map((d, i) => ({
+  // Se asume que los últimos de la lista son los más recientes
+  const recent = [...docs].reverse().slice(0, 6);
+  return recent.map((d, i) => ({
     id: d.docId ?? String(i),
     titulo: d.title,
     categoria: d.categoria,
@@ -90,22 +101,26 @@ function computeActivity(docs: DocumentResponse[]): RecentActivity[] {
   }));
 }
 
-/** Calcula data real para el gráfico de 7 días (como no hay fecha real, mapeamos todo a hoy) */
 function computeWeeklyData(docs: DocumentResponse[]) {
   const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const todayIndex = new Date().getDay(); 
   const jsDayToArr = todayIndex === 0 ? 6 : todayIndex - 1;
 
-  let avgPrec = 0;
-  if (docs.length > 0) {
-    avgPrec = docs.reduce((acc, d) => acc + (d.probabilidadCategoria || 0), 0) / docs.length;
-  }
-
-  return days.map((name, i) => ({
-    name,
-    docs: i === jsDayToArr ? docs.length : 0,
-    precision: i === jsDayToArr ? Math.round(avgPrec * 100) : 0,
-  }));
+  return days.map((name, i) => {
+    const isToday = i === jsDayToArr;
+    // Como el backend no envía fechas, asignamos todos los documentos al día de hoy para reflejar la realidad actual.
+    const dayDocs = isToday ? docs : [];
+    const avgPrec = dayDocs.length > 0 
+      ? dayDocs.reduce((acc, d) => acc + (d.probabilidadCategoria || 0), 0) / dayDocs.length 
+      : 0;
+      
+    return {
+      dia: name, // XAxis dataKey is 'dia'
+      documentos: dayDocs.length,
+      promedio_precision: Math.round(avgPrec * 100),
+      dayDocs // Guardamos los documentos reales para mostrarlos en el modal
+    };
+  });
 }
 
 /* ── StatCard ── */
@@ -204,6 +219,9 @@ export function Dashboard() {
   const [categories, setCategories] = useState<CategoryStat[]>([]);
   const [keywords,   setKeywords]   = useState<KeywordStat[]>([]);
   const [activity,   setActivity]   = useState<RecentActivity[]>([]);
+  const [allDocs,    setAllDocs]    = useState<DocumentResponse[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
+  const [selectedDayDocs, setSelectedDayDocs] = useState<{dia: string, docs: DocumentResponse[]} | null>(null);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
 
@@ -213,12 +231,22 @@ export function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const docs = await documentService.getAll();
-      setStats(computeStats(docs));
+      const [docs, kws] = await Promise.all([
+        documentService.getAll(),
+        keywordService.getAll().catch(() => [])
+      ]);
+      setStats({ ...computeStats(docs), total_keywords: kws.length });
       setCategories(computeCategories(docs));
-      setKeywords(computeKeywords(docs));
+      
+      let computedKws = computeKeywords(docs);
+      if (computedKws.length === 0 && kws.length > 0) {
+        computedKws = kws.slice(0, 10).map(k => ({ keyword: k.keyword, frecuencia: 1 }));
+      }
+      setKeywords(computedKws);
+      
       setActivity(computeActivity(docs));
       setWeeklyData(computeWeeklyData(docs));
+      setAllDocs(docs);
     } catch {
       // Backend no disponible — mostrar ceros reales, no datos inventados
       setStats({ total_documentos: 0, categorias_activas: 0, precision_promedio: 0, documentos_hoy: 0 });
@@ -244,7 +272,7 @@ export function Dashboard() {
     },
     {
       label: 'Palabras Clave',
-      value: keywords.length,
+      value: stats.total_keywords || 0,
       suffix: '',
       icon: <Layers size={20} color={THEME.secondary} />,
       color: THEME.secondary,
@@ -305,31 +333,24 @@ export function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-              <defs>
-                <linearGradient id="grad-docs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={THEME.primary} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={THEME.primary} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="grad-prec" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={THEME.success} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={THEME.success} stopOpacity={0} />
-                </linearGradient>
-              </defs>
+            <BarChart data={weeklyData} margin={{ top: 10, right: 4, bottom: 0, left: -20 }}>
               <XAxis dataKey="dia" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone" dataKey="documentos" name="Documentos"
-                stroke={THEME.primary} strokeWidth={2.5}
-                fill="url(#grad-docs)" dot={false}
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(37,99,235,0.05)' }} />
+              <Bar 
+                dataKey="documentos" 
+                name="Documentos" 
+                fill={THEME.primary} 
+                radius={[4, 4, 0, 0]}
+                onClick={(data: any) => {
+                  const payload = data?.payload || data;
+                  if (payload && payload.dayDocs && payload.dayDocs.length > 0) {
+                    setSelectedDayDocs({ dia: payload.dia, docs: payload.dayDocs });
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
               />
-              <Area
-                type="monotone" dataKey="promedio_precision" name="Precisión"
-                stroke={THEME.success} strokeWidth={2}
-                fill="url(#grad-prec)" dot={false}
-              />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
@@ -388,7 +409,15 @@ export function Dashboard() {
               </div>
             ) : (
               activity.map((item) => (
-                <div key={item.id} className="activity-item">
+                <div 
+                  key={item.id} 
+                  className="activity-item" 
+                  onClick={() => {
+                    const found = allDocs.find(d => d.docId === item.id);
+                    if (found) setSelectedDoc(found);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="activity-icon">
                     <CategoryIcon category={item.categoria} size={16} />
                   </div>
@@ -420,9 +449,9 @@ export function Dashboard() {
         <div className="quick-card fade-up" style={{ animationDelay: '0.6s' }}>
           <div className="quick-card-header">
             <div className="quick-card-title">Top Keywords</div>
-            <a href="/keywords" className="activity-link">
+            <Link to="/keywords" className="activity-link">
               Ver todas <ArrowRight size={12} />
-            </a>
+            </Link>
           </div>
           <div className="keyword-cloud stagger">
             {keywords.map((kw, i) => {
@@ -450,6 +479,106 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Modal para ver detalles del documento al hacer click */}
+      {selectedDoc && (
+        <div
+          className="doc-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedDoc(null); }}
+          style={{ zIndex: 1000 }}
+        >
+          <div className="doc-modal">
+            <div className="doc-modal-header">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                <div className="doc-modal-icon" style={{ background: 'var(--clr-primary-light)', padding: 10, borderRadius: 10 }}>
+                  <FileText size={22} color="var(--clr-primary)" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 className="doc-modal-title" style={{ fontSize: '1.1rem', margin: '0 0 6px 0', color: 'var(--clr-text)' }}>{selectedDoc.title}</h2>
+                  <div className="doc-modal-meta" style={{ display: 'flex', gap: 10, fontSize: '0.8rem' }}>
+                    <span style={{ color: 'var(--clr-primary)', fontWeight: 600 }}>{selectedDoc.categoria}</span>
+                    <span style={{ color: 'var(--clr-text-muted)' }}>{Math.round((selectedDoc.probabilidadCategoria || 0) * 100)}% de precisión</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDoc(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)' }}
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="doc-modal-body" style={{ padding: '20px', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ marginBottom: 12, fontWeight: 600, fontSize: '0.9rem', color: 'var(--clr-text)' }}>Resumen / Contenido:</div>
+              <p style={{ color: 'var(--clr-text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                {selectedDoc.content || 'Sin contenido detallado disponible.'}
+              </p>
+              
+              {selectedDoc.keywords && selectedDoc.keywords.length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ marginBottom: 12, fontWeight: 600, fontSize: '0.9rem', color: 'var(--clr-text)' }}>Palabras Clave:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {selectedDoc.keywords.map(kw => (
+                      <span key={kw} style={{ background: 'var(--clr-bg-2)', border: '1px solid var(--clr-border)', padding: '4px 10px', borderRadius: 20, fontSize: '0.75rem', color: 'var(--clr-text-subtle)' }}>
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para ver lista de documentos de un día específico en la gráfica */}
+      {selectedDayDocs && (
+        <div
+          className="doc-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedDayDocs(null); }}
+          style={{ zIndex: 1000 }}
+        >
+          <div className="doc-modal" style={{ maxWidth: 500 }}>
+            <div className="doc-modal-header">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                <div className="doc-modal-icon" style={{ background: 'var(--clr-primary-light)', padding: 10, borderRadius: 10 }}>
+                  <Layers size={22} color="var(--clr-primary)" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 className="doc-modal-title" style={{ fontSize: '1.1rem', margin: '0 0 4px 0', color: 'var(--clr-text)' }}>
+                    Documentos ({selectedDayDocs.dia})
+                  </h2>
+                  <div className="doc-modal-meta" style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>
+                    {selectedDayDocs.docs.length} documentos procesados
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDayDocs(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="doc-modal-body" style={{ padding: '20px', maxHeight: '55vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[...selectedDayDocs.docs].reverse().slice(0, 10).map(doc => (
+                  <div key={doc.docId} style={{ background: 'var(--clr-surface)', border: '1px solid var(--clr-border)', borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--clr-text)' }}>{doc.title}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                      <span style={{ color: 'var(--clr-primary)' }}>{doc.categoria}</span>
+                      <span style={{ color: 'var(--clr-text-muted)' }}>{Math.round((doc.probabilidadCategoria || 0) * 100)}% precisión</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

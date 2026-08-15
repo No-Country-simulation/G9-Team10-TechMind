@@ -14,6 +14,7 @@ export interface DocumentCardProps {
   recommended?: boolean;
   showSimilarity?: boolean;
   to?: string;
+  onClick?: () => void;
 }
 
 export function DocumentCard({
@@ -25,6 +26,7 @@ export function DocumentCard({
   recommended = false,
   showSimilarity = true,
   to,
+  onClick,
 }: DocumentCardProps) {
   const color = CATEGORY_COLORS[category] ?? THEME.primary;
 
@@ -61,7 +63,10 @@ export function DocumentCard({
   );
 
   if (to) {
-    return <Link to={to} className="doc-card-link">{content}</Link>;
+    return <Link to={to} className="doc-card-link" onClick={onClick}>{content}</Link>;
+  }
+  if (onClick) {
+    return <div className="doc-card-link" onClick={onClick} style={{ cursor: 'pointer' }}>{content}</div>;
   }
   return content;
 }

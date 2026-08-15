@@ -210,12 +210,19 @@
 }
 .history-table-wrap tbody tr:hover { background: rgba(37, 99, 235, 0.03); }
 
-.col-num      { width: 44px; }
+.col-num      { width: 60px; min-width: 60px; }
 .col-titulo   { width: auto; }
 .col-cat      { width: 165px; }
 .col-conf     { width: 140px; }
 
-.td-num { color: var(--clr-text-muted) !important; font-weight: 700; }
+.td-num { 
+  color: var(--clr-text-muted) !important; 
+  font-weight: 700; 
+  padding-left: 14px !important;
+  padding-right: 6px !important;
+  text-overflow: clip !important;
+  white-space: nowrap;
+}
 
 .td-titulo {
   font-weight: 600;
@@ -225,12 +232,13 @@
 .cat-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 4px 11px;
   border-radius: var(--radius-full);
   font-size: 0.71rem;
   font-weight: 700;
   white-space: nowrap;
+  min-height: 24px;
 }
 
 .conf-cell { display: flex; align-items: center; gap: 8px; }

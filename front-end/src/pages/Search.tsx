@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, SlidersHorizontal, Loader2, Sparkles } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2, Sparkles, Tag, X } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pagination } from '@/components/ui/Pagination';
 import { CATEGORY_COLORS, ROUTES, THEME } from '@/utils/constants';
 import { documentService } from '@/services/api';
@@ -10,9 +11,8 @@ import type { DocumentResponse, DocumentoSimilitudResponse } from '@/types';
 import './Search.css';
 
 const PAGE_SIZE = 10;
-
 const LEVELS = ['Principiante', 'Intermedio', 'Avanzado'];
-const LANGUAGES = ['Español', 'Inglés', 'Portugués'];
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 type SearchMode = 'all' | 'keyword' | 'title';
 
@@ -21,7 +21,7 @@ function docToResult(doc: DocumentResponse) {
     id: doc.docId,
     title: doc.title,
     description: doc.content?.slice(0, 140) + (doc.content?.length > 140 ? '…' : ''),
-    category: doc.categoria,
+    category: doc.categoria && doc.categoria.trim() !== '' ? doc.categoria : 'General',
     tags: doc.keywords?.slice(0, 3) ?? [],
     similarity: Math.round(doc.probabilidadCategoria * 100),
     recommended: doc.probabilidadCategoria >= 0.88,
@@ -41,7 +41,7 @@ export function SearchPage() {
   const [searchMode, setSearchMode] = useState<SearchMode>('all');
   const [selectedCats, setSelectedCats] = useState<string[]>(initialCat ? [initialCat] : []);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [semanticResults, setSemanticResults] = useState<DocumentoSimilitudResponse[]>([]);
@@ -50,7 +50,11 @@ export function SearchPage() {
   // Carga inicial: todos los documentos
   useEffect(() => {
     documentService.getAll()
-      .then(data => { setAllDocs(data); setDocs(data); })
+      .then(data => { 
+        setAllDocs(data); 
+        const q = params.get('q');
+        if (!q) setDocs(data);
+      })
       .catch(() => { setAllDocs([]); setDocs([]); })
       .finally(() => setLoading(false));
   }, []);
@@ -68,7 +72,6 @@ export function SearchPage() {
     setSearchError(null);
     setSemanticResults([]);
 
-    // Evitar Error 400: Spring Boot rechaza %2F en @PathVariable
     if (q.includes('/') || q.includes('\\')) {
       const q2 = q.toLowerCase();
       setDocs(allDocs.filter(d =>
@@ -81,18 +84,15 @@ export function SearchPage() {
     }
 
     try {
-      // 1️⃣ Busca por keyword en el backend
       const byKw = await documentService.getByKeyword(q.trim());
       setDocs(byKw);
       setSearchMode('keyword');
     } catch {
       try {
-        // 2️⃣ Fallback: busca por título exacto
         const byTitle = await documentService.getByTitle(q.trim());
         setDocs([byTitle]);
         setSearchMode('title');
       } catch {
-        // 3️⃣ Fallback local
         const q2 = q.toLowerCase();
         const localResults = allDocs.filter(d =>
           (d.title?.toLowerCase().includes(q2)) ||
@@ -101,13 +101,11 @@ export function SearchPage() {
         setDocs(localResults);
         setSearchMode('all');
 
-        // 4️⃣ Si tampoco hay resultados locales → buscar semánticamente con IA
         if (localResults.length === 0) {
           try {
             const semantic = await documentService.semanticSearch(q.trim(), 3);
             setSemanticResults(semantic.resultados ?? []);
           } catch {
-            // Motor semántico no disponible — no bloqueamos la UI
             setSemanticResults([]);
           }
         }
@@ -117,10 +115,58 @@ export function SearchPage() {
     }
   }, [allDocs]);
 
-  const allCategories = useMemo(() => {
-    const fromDocs = allDocs.map(d => d.categoria);
-    return [...new Set([...Object.keys(CATEGORY_COLORS), ...fromDocs])].sort();
+  useEffect(() => {
+    const q = params.get('q');
+    if (allDocs.length > 0 && q !== null) {
+      runSearch(q);
+    }
+  }, [params, allDocs, runSearch]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      const currentQ = params.get('q') ?? '';
+      if (query !== currentQ) {
+        setCurrentPage(1);
+        setParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          if (query.trim()) newParams.set('q', query);
+          else newParams.delete('q');
+          return newParams;
+        }, { replace: true });
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [query, params, setParams]);
+
+  // Conteo dinámico de documentos por categoría
+  const categoryStats = useMemo(() => {
+    const stats: Record<string, number> = {};
+    allDocs.forEach(d => {
+      const cat = d.categoria && d.categoria.trim() !== '' ? d.categoria : 'General';
+      stats[cat] = (stats[cat] || 0) + 1;
+    });
+    Object.keys(CATEGORY_COLORS).forEach(c => {
+      if (stats[c] === undefined) stats[c] = 0;
+    });
+    return stats;
   }, [allDocs]);
+
+  // Conjunto de letras iniciales que tienen categorías disponibles
+  const lettersWithCategories = useMemo(() => {
+    const set = new Set<string>();
+    Object.keys(categoryStats).forEach(cat => {
+      if (cat) set.add(cat.charAt(0).toUpperCase());
+    });
+    return set;
+  }, [categoryStats]);
+
+  // Categorías filtradas por la letra seleccionada
+  const displayedCategories = useMemo(() => {
+    const all = Object.keys(categoryStats).sort();
+    if (!selectedLetter || selectedLetter === 'TODAS') return all;
+    return all.filter(cat => cat.toUpperCase().startsWith(selectedLetter));
+  }, [categoryStats, selectedLetter]);
 
   const results = useMemo(() => {
     let list = docs.map(docToResult);
@@ -134,23 +180,20 @@ export function SearchPage() {
     return list;
   }, [docs, selectedCats, selectedLevels]);
 
-  // Reset page when results change (new search or filter)
   const totalPages = useMemo(() => Math.ceil(results.length / PAGE_SIZE), [results.length]);
   const pagedResults = useMemo(
     () => results.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     [results, currentPage]
   );
 
-  // Enriquecer resultados semánticos con datos completos del documento.
-  // Filtra resultados "Mock" (IDs que no existen en allDocs).
   const enrichedSemanticResults = useMemo(() => {
     return semanticResults
       .map(sr => {
         const fullDoc = allDocs.find(d => d.docId === sr.doc_id);
-        if (!fullDoc) return null; // Ignorar mocks
+        if (!fullDoc) return null;
         return {
           ...docToResult(fullDoc),
-          similarity: Math.round(sr.similarity_score * 100), // Usar la precisión real devuelta por la IA
+          similarity: Math.round(sr.similarity_score * 100),
           recommended: true
         };
       })
@@ -161,11 +204,29 @@ export function SearchPage() {
     e.preventDefault();
     setCurrentPage(1);
     setParams({ q: query, ...(selectedCats[0] ? { cat: selectedCats[0] } : {}) });
-    runSearch(query);
+  };
+
+  const handleLetterClick = (letter: string) => {
+    if (letter === 'TODAS') {
+      setSelectedLetter(null);
+    } else {
+      setSelectedLetter(prev => prev === letter ? null : letter);
+    }
+  };
+
+  const handleCategorySelect = (catName: string) => {
+    setCurrentPage(1);
+    const newSelected = selectedCats.includes(catName) ? [] : [catName];
+    setSelectedCats(newSelected);
+    setParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (newSelected.length > 0) p.set('cat', newSelected[0]);
+      else p.delete('cat');
+      return p;
+    }, { replace: true });
   };
 
   const toggleFilter = (list: string[], set: (v: string[]) => void, value: string) => {
-    // Exclusivo: si ya está seleccionado, se vacía. Si no, se selecciona como único valor.
     set(list.includes(value) ? [] : [value]);
   };
 
@@ -210,10 +271,88 @@ export function SearchPage() {
         )}
       </header>
 
+      {/* ── Explorador de Categorías por Abecedario A-Z ── */}
+      <section className="search-alpha-section fade-up">
+        <div className="search-alpha-header">
+          <div className="search-alpha-title">
+            <Tag size={16} />
+            <span>Explorador de Categorías por Abecedario</span>
+          </div>
+          {selectedCats.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-xs"
+              onClick={() => {
+                setSelectedCats([]);
+                setParams(prev => {
+                  const p = new URLSearchParams(prev);
+                  p.delete('cat');
+                  return p;
+                }, { replace: true });
+              }}
+              style={{ fontSize: '0.75rem', gap: 4, color: 'var(--clr-primary)' }}
+            >
+              <X size={13} /> Limpiar filtro de categoría ({selectedCats[0]})
+            </button>
+          )}
+        </div>
+
+        <div className="search-alpha-strip">
+          {ALPHABET.map(letter => {
+            const hasCats = letter === 'TODAS' || lettersWithCategories.has(letter);
+            const isActive = (letter === 'TODAS' && !selectedLetter) || selectedLetter === letter;
+            return (
+              <button
+                key={letter}
+                type="button"
+                className={`search-alpha-btn${hasCats ? ' has-cats' : ''}${isActive ? ' active' : ''}`}
+                onClick={() => handleLetterClick(letter)}
+                title={hasCats ? `Filtrar categorías por la letra ${letter}` : `Sin categorías con la letra ${letter}`}
+              >
+                {letter}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="search-cat-grid">
+          {displayedCategories.length === 0 ? (
+            <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', padding: '8px 0' }}>
+              No se encontraron categorías que comiencen con la letra <strong>'{selectedLetter}'</strong>
+            </div>
+          ) : (
+            displayedCategories.map(cat => {
+              const isSelected = selectedCats.includes(cat);
+              const col = CATEGORY_COLORS[cat] ?? THEME.primary;
+              const count = categoryStats[cat] || 0;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`search-cat-card${isSelected ? ' selected' : ''}`}
+                  onClick={() => handleCategorySelect(cat)}
+                  style={{
+                    borderColor: isSelected ? col : undefined,
+                    background: isSelected ? `${col}18` : undefined,
+                    color: isSelected ? col : undefined,
+                  }}
+                >
+                  <CategoryIcon category={cat} size={14} />
+                  <span>{cat}</span>
+                  <span className="search-cat-count" style={{ background: isSelected ? `${col}30` : undefined }}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </section>
+
       <div className="search-layout">
         {showFilters && (
           <aside className="search-filters fade-up">
-            <h3 className="filter-title">Nivel</h3>
+            <h3 className="filter-title">Nivel Dificultad</h3>
             <div className="filter-group">
               {LEVELS.map(l => (
                 <label key={l} className="filter-check">
@@ -223,35 +362,6 @@ export function SearchPage() {
                     onChange={() => toggleFilter(selectedLevels, setSelectedLevels, l)}
                   />
                   {l}
-                </label>
-              ))}
-            </div>
-
-            <h3 className="filter-title">Categoría</h3>
-            <div className="filter-group">
-              {allCategories.slice(0, 8).map(cat => (
-                <label key={cat} className="filter-check">
-                  <input
-                    type="checkbox"
-                    checked={selectedCats.includes(cat)}
-                    onChange={() => toggleFilter(selectedCats, setSelectedCats, cat)}
-                  />
-                  <span className="filter-dot" style={{ background: CATEGORY_COLORS[cat] ?? THEME.primary }} />
-                  {cat}
-                </label>
-              ))}
-            </div>
-
-            <h3 className="filter-title">Idioma</h3>
-            <div className="filter-group">
-              {LANGUAGES.map(lang => (
-                <label key={lang} className="filter-check">
-                  <input
-                    type="checkbox"
-                    checked={selectedLangs.includes(lang)}
-                    onChange={() => toggleFilter(selectedLangs, setSelectedLangs, lang)}
-                  />
-                  {lang}
                 </label>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BarChart2, Hash, Trash2, BookOpen, X, FileText, Tag } from 'lucide-react';
+import { BarChart2, Hash, BookOpen, X, FileText, Tag } from 'lucide-react';
 import { keywordService, documentService } from '@/services/api';
 import type { KeywordResponse, DocumentResponse } from '@/types';
 import './HistoryKeywords.css';
@@ -7,11 +7,10 @@ import './HistoryKeywords.css';
 import { CHART_PALETTE } from '@/utils/constants';
 
 function KwBarRow({
-  kw, idx, onDelete,
+  kw, idx,
 }: {
   kw: KeywordResponse;
   idx: number;
-  onDelete: (kw: KeywordResponse) => void;
 }) {
   const fillRef = useRef<HTMLDivElement>(null);
   const color = CHART_PALETTE[idx % CHART_PALETTE.length];
@@ -39,27 +38,6 @@ function KwBarRow({
       </div>
 
       <span className="kw-bar-count" style={{ color }}>#{kw.id}</span>
-
-      <button
-        onClick={() => onDelete(kw)}
-        title="Eliminar keyword"
-        style={{
-          background: 'none',
-          border: 'none',
-          color: 'var(--clr-danger)',
-          cursor: 'pointer',
-          padding: '2px 4px',
-          borderRadius: 4,
-          opacity: 0.5,
-          transition: 'opacity 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-      >
-        <Trash2 size={12} />
-      </button>
     </div>
   );
 }
@@ -73,22 +51,9 @@ export function Keywords() {
   const [kwDocsLoading, setKwDocsLoading] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 30;
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
-        // Ignorar si se hizo click en un chip de la nube (tienen su propio handler)
-        const target = e.target as HTMLElement;
-        if (target.closest('.kw-cloud-chip')) return;
-        
-        setSelectedKw(null);
-        setKwDocs([]);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -130,32 +95,17 @@ export function Keywords() {
     }
   };
 
-  const handleDelete = async (kw: KeywordResponse) => {
-    if (!window.confirm(`¿Eliminar la keyword "${kw.keyword}"?`)) return;
-    try {
-      // 1️⃣ Primero intenta deleteByKeyword (más semántico)
-      await keywordService.deleteByKeyword(kw.keyword);
-      setKeywords(prev => prev.filter(k => k.id !== kw.id));
-      if (selectedKw?.id === kw.id) { setSelectedKw(null); setKwDocs([]); }
-    } catch {
-      // Fallback: deleteById
-      try {
-        await keywordService.deleteById(kw.id);
-        setKeywords(prev => prev.filter(k => k.id !== kw.id));
-        if (selectedKw?.id === kw.id) { setSelectedKw(null); setKwDocs([]); }
-      } catch {
-        alert('Error al eliminar la keyword.');
-      }
-    }
-  };
+
 
   const filtered = keywords.filter(k =>
     !search.trim() || k.keyword?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const cloudKeywords = filtered.filter(k => 
-    !selectedLetter || (k.keyword && k.keyword.toUpperCase().startsWith(selectedLetter))
-  );
+  const letterFiltered = filtered
+    .filter(k => selectedLetter && k.keyword && k.keyword.toUpperCase().startsWith(selectedLetter));
+
+  const totalPages = Math.ceil(letterFiltered.length / ITEMS_PER_PAGE);
+  const cloudKeywords = letterFiltered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <main className="page-container">
@@ -232,7 +182,6 @@ export function Keywords() {
                   key={kw.id}
                   kw={kw}
                   idx={i}
-                  onDelete={handleDelete}
                 />
               ))}
             </div>
@@ -250,17 +199,14 @@ export function Keywords() {
 
             {/* Abecedario */}
             <div className="kw-alpha-filter fade-up">
-              <button 
-                className={`kw-alpha-btn ${!selectedLetter ? 'active' : ''}`}
-                onClick={() => setSelectedLetter(null)}
-              >
-                Todas
-              </button>
               {ALPHABET.map(letter => (
                 <button
                   key={letter}
                   className={`kw-alpha-btn ${selectedLetter === letter ? 'active' : ''}`}
-                  onClick={() => setSelectedLetter(letter)}
+                  onClick={() => {
+                    setSelectedLetter(letter);
+                    setCurrentPage(1); // Reset page on letter change
+                  }}
                 >
                   {letter}
                 </button>
@@ -268,7 +214,11 @@ export function Keywords() {
             </div>
 
             <div className="kw-cloud-body stagger">
-              {cloudKeywords.length === 0 ? (
+              {!selectedLetter ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', width: '100%', color: 'var(--clr-text-muted)', fontSize: '0.9rem' }}>
+                  Selecciona una letra del abecedario para explorar las palabras clave.
+                </div>
+              ) : cloudKeywords.length === 0 ? (
                 <div style={{ padding: '20px', textAlign: 'center', width: '100%', color: 'var(--clr-text-muted)', fontSize: '0.85rem' }}>
                   No hay palabras clave con esta letra.
                 </div>
@@ -286,7 +236,7 @@ export function Keywords() {
                       background: isActive ? `${color}30` : `${color}16`,
                       borderColor: isActive ? color : `${color}32`,
                       color,
-                      animationDelay: `${i * 0.05}s`,
+                      animationDelay: `${Math.min(i, 20) * 0.04}s`,
                       cursor: 'pointer',
                       outline: isActive ? `2px solid ${color}` : 'none',
                       outlineOffset: 2,
@@ -300,85 +250,103 @@ export function Keywords() {
                 );
               })}
             </div>
-          </div>
 
-        </div>
-      )}
-
-      {/* ── Panel lateral: documentos que usan esta keyword ── */}
-      {selectedKw && (
-        <div
-          ref={drawerRef}
-          style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 320,
-            background: 'var(--clr-surface-elevated, var(--clr-surface))',
-            borderLeft: '1px solid var(--clr-border)',
-            padding: '28px 22px',
-            overflowY: 'auto',
-            zIndex: 200,
-            boxShadow: '-4px 0 32px rgba(0,0,0,0.25)',
-            animation: 'slideInRight 0.22s ease',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Hash size={15} style={{ color: 'var(--clr-secondary)' }} />
-              <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>{selectedKw.keyword}</span>
-            </div>
-            <button
-              onClick={() => { setSelectedKw(null); setKwDocs([]); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)', display: 'flex' }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginBottom: 16 }}>
-            ID: <span style={{ fontFamily: 'monospace' }}>#{selectedKw.id}</span>
-          </div>
-
-          <div style={{ marginBottom: 18 }}>
-            <p style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)', marginBottom: 10 }}>
-              <BookOpen size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-              Documentos con esta keyword
-            </p>
-            {kwDocsLoading ? (
-              <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem' }}>Buscando documentos…</div>
-            ) : kwDocs.length === 0 ? (
-              <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem' }}>Ningún documento asociado</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {kwDocs.map(doc => (
+            {/* Paginación Numérica */}
+            {selectedLetter && totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24, paddingBottom: 10 }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <button
-                    key={doc.docId}
-                    onClick={() => setSelectedDoc(doc)}
-                    className="kw-doc-card-btn"
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      width: 32, height: 32,
+                      borderRadius: 6,
+                      border: '1px solid',
+                      borderColor: currentPage === page ? 'var(--clr-primary)' : 'var(--clr-border)',
+                      background: currentPage === page ? 'var(--clr-primary)' : 'transparent',
+                      color: currentPage === page ? '#fff' : 'var(--clr-text)',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <FileText size={12} style={{ color: 'var(--clr-primary)', flexShrink: 0 }} />
-                      <span style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--clr-text)', textAlign: 'left', lineHeight: 1.3 }}>{doc.title}</span>
-                    </div>
-                    <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.72rem', paddingLeft: 18 }}>
-                      {doc.categoria} · {Math.round(doc.probabilidadCategoria * 100)}%
-                    </div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--clr-primary)', paddingLeft: 18, marginTop: 2, opacity: 0.7 }}>Click para leer →</div>
+                    {page}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <button
-            onClick={() => handleDelete(selectedKw)}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-              color: 'var(--clr-danger)', borderRadius: 8, padding: '9px 0',
-              cursor: 'pointer', fontSize: '0.83rem', fontWeight: 600,
-            }}
-          >
-            <Trash2 size={13} /> Eliminar keyword
-          </button>
+        </div>
+      )}
+
+      {/* ── Modal central: detalle de keyword y documentos ── */}
+      {selectedKw && (
+        <div
+          className="doc-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) { setSelectedKw(null); setKwDocs([]); } }}
+          style={{ zIndex: selectedDoc ? 490 : 500 }}
+        >
+          <div className="doc-modal" style={{ maxWidth: 540 }}>
+            {/* Header */}
+            <div className="doc-modal-header">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                <div className="doc-modal-icon">
+                  <Hash size={22} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 className="doc-modal-title">{selectedKw.keyword}</h2>
+                  <div className="doc-modal-meta">
+                    <span className="doc-modal-conf">ID: #{selectedKw.id}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => { setSelectedKw(null); setKwDocs([]); }}
+                className="doc-modal-close"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Cuerpo principal */}
+            <div className="doc-modal-body">
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--clr-text)', marginBottom: 12 }}>
+                  <BookOpen size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--clr-primary)' }} />
+                  Documentos con esta keyword
+                </p>
+                {kwDocsLoading ? (
+                  <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem' }}>Buscando documentos…</div>
+                ) : kwDocs.length === 0 ? (
+                  <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem' }}>Ningún documento asociado</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {kwDocs.map(doc => (
+                      <button
+                        key={doc.docId}
+                        onClick={() => setSelectedDoc(doc)}
+                        className="kw-doc-card-btn"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <FileText size={12} style={{ color: 'var(--clr-primary)', flexShrink: 0 }} />
+                          <span style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--clr-text)', textAlign: 'left', lineHeight: 1.3 }}>{doc.title}</span>
+                        </div>
+                        <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.72rem', paddingLeft: 18 }}>
+                          {doc.categoria} · {Math.round((doc.probabilidadCategoria || 0) * 100)}%
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--clr-primary)', paddingLeft: 18, marginTop: 2, opacity: 0.7 }}>Ver documento completo →</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+
+            </div>
+          </div>
         </div>
       )}
 
@@ -399,7 +367,7 @@ export function Keywords() {
                   <h2 className="doc-modal-title">{selectedDoc.title}</h2>
                   <div className="doc-modal-meta">
                     <span className="doc-modal-cat">{selectedDoc.categoria}</span>
-                    <span className="doc-modal-conf">{Math.round(selectedDoc.probabilidadCategoria * 100)}% confianza</span>
+                    <span className="doc-modal-conf">{Math.round((selectedDoc.probabilidadCategoria || 0) * 100)}% confianza</span>
                   </div>
                 </div>
               </div>

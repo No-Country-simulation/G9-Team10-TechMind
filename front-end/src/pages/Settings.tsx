@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { User, Globe, Palette, Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Globe, Palette, Bell, Compass } from 'lucide-react';
 import { useSettings, type Language } from '@/context/SettingsContext';
 import { useTranslations } from '@/utils/i18n';
 import './Settings.css';
 
 const SETTINGS_NAV = [
   { id: 'general',        icon: Palette },
-  { id: 'perfil',         icon: User },
   { id: 'preferencias',   icon: Globe },
   { id: 'notificaciones', icon: Bell },
+  { id: 'bienvenida',     icon: Compass },
 ] as const;
 
 type SettingsTab = typeof SETTINGS_NAV[number]['id'];
@@ -22,9 +23,9 @@ export function Settings() {
 
   const tabLabels: Record<SettingsTab, string> = {
     general: t.settings.general,
-    perfil: t.settings.profile,
     preferencias: t.settings.preferences,
     notificaciones: t.settings.notifications,
+    bienvenida: 'Bienvenida',
   };
 
   return (
@@ -90,34 +91,7 @@ export function Settings() {
             </>
           )}
 
-          {active === 'perfil' && (
-            <>
-              <h2 className="settings-panel-title">{t.settings.profileTitle}</h2>
-              <div className="settings-field">
-                <label className="settings-label" htmlFor="name">{t.settings.name}</label>
-                <input
-                  id="name"
-                  className="input"
-                  value={draft.profile.name}
-                  onChange={e => updateDraft('profile', { ...draft.profile, name: e.target.value })}
-                />
-              </div>
-              <div className="settings-field">
-                <label className="settings-label" htmlFor="email">{t.settings.email}</label>
-                <input
-                  id="email"
-                  className="input"
-                  type="email"
-                  value={draft.profile.email}
-                  onChange={e => updateDraft('profile', { ...draft.profile, email: e.target.value })}
-                />
-              </div>
-              <div className="settings-field">
-                <label className="settings-label" htmlFor="role">{t.settings.role}</label>
-                <input id="role" className="input" value={draft.profile.role} readOnly />
-              </div>
-            </>
-          )}
+
 
           {active === 'preferencias' && (
             <>
@@ -210,6 +184,20 @@ export function Settings() {
                 />
                 <span className="toggle-track" />
               </label>
+            </>
+          )}
+
+          {active === 'bienvenida' && (
+            <>
+              <h2 className="settings-panel-title">Pantalla de Bienvenida</h2>
+              <div className="settings-field">
+                <p style={{ color: 'var(--clr-text-muted)', marginBottom: 20 }}>
+                  Puedes volver a ver la pantalla de introducción de TechMind en cualquier momento.
+                </p>
+                <Link to="/welcome" className="btn btn-primary" style={{ display: 'inline-flex', width: 'auto' }}>
+                  Ir a la Bienvenida
+                </Link>
+              </div>
             </>
           )}
 

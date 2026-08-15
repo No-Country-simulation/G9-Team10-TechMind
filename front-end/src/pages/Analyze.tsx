@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings, Trash2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Code2, Tag, Eye, EyeOff, Brain, Settings, Trash2, Upload } from 'lucide-react';
 import { documentService } from '@/services/api';
 import { CATEGORY_COLORS, THEME } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
@@ -82,11 +82,17 @@ export function Analyze() {
       let doc;
       let alreadyExists = false;
 
-      try {
-        // 1. Verificar si el documento ya existe
-        doc = await documentService.getByTitle(input.titulo);
+      // 1. Verificar si el documento ya existe (por título o descripción idénticos)
+      const allDocs = await documentService.getAll();
+      const existingDoc = allDocs.find(
+        d => d.title.trim().toLowerCase() === input.titulo.trim().toLowerCase() ||
+             (d.content && d.content.trim().toLowerCase() === input.texto.trim().toLowerCase())
+      );
+
+      if (existingDoc) {
+        doc = existingDoc;
         alreadyExists = true;
-      } catch {
+      } else {
         // 2. Si no existe, crearlo llamando al backend
         doc = await documentService.create({
           title:   input.titulo,
@@ -128,6 +134,23 @@ export function Analyze() {
     setError(null);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Fill title without extension
+    const titulo = file.name.replace(/\.[^/.]+$/, "");
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const texto = event.target?.result as string;
+      setInput({ titulo, texto });
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be selected again
+    e.target.value = '';
+  };
+
   const catColor = result ? (CATEGORY_COLORS[result.categoria] ?? THEME.primary) : THEME.primary;
 
   return (
@@ -147,6 +170,14 @@ export function Analyze() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Sparkles size={18} style={{ color: 'var(--clr-primary)' }} />
                 Entrada de Contenido
+                <label style={{ 
+                  marginLeft: 12, fontSize: '0.75rem', cursor: 'pointer', 
+                  color: 'var(--clr-primary)', display: 'flex', alignItems: 'center', gap: 4,
+                  background: 'rgba(37,99,235,0.08)', padding: '4px 8px', borderRadius: 6
+                }}>
+                  <Upload size={14} /> Importar TXT
+                  <input type="file" accept=".txt,.json,.md,.csv" style={{ display: 'none' }} onChange={handleFileUpload} />
+                </label>
               </div>
               {(input.titulo || input.texto || result) && (
                 <button

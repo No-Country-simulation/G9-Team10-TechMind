@@ -46,6 +46,7 @@ export interface DashboardStats {
   categorias_activas: number;
   precision_promedio: number;
   documentos_hoy: number;
+  total_keywords?: number;
 }
 
 export interface CategoryStat {

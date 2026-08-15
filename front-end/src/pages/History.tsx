@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, ChevronDown, Check, RefreshCw, Trash2, Plus, Upload, X, BookOpen, Sparkles } from 'lucide-react';
+import { Search, ChevronDown, Check, RefreshCw, Plus, Upload, X, Sparkles, FileText, Tag } from 'lucide-react';
 import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pagination } from '@/components/ui/Pagination';
@@ -76,34 +76,21 @@ export function History() {
   const [docs,    setDocs]    = useState<DocumentResponse[]>([]);
   const [search,  setSearch]  = useState('');
   const [cat,     setCat]     = useState('Todas');
-  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [sortOption, setSortOption] = useState<'recent-desc' | 'recent-asc' | 'prec-desc' | 'prec-asc'>('recent-desc');
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
+
   const [detailDoc, setDetailDoc] = useState<DocumentResponse | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<DocumentoSimilitudResponse[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const drawerRef = useRef<HTMLDivElement>(null);
 
   // Volver a la página 1 cuando se cambia la búsqueda, categoría o el orden
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, cat, sortDir]);
+  }, [search, cat, sortOption]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
-        // Si el click fue en un botón de eliminar, no cerrar el drawer aquí (se maneja en su propio onClick)
-        const target = e.target as HTMLElement;
-        if (target.closest('button[title="Eliminar documento"]')) return;
-        
-        setDetailDoc(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
 
   const loadDocs = async () => {
     setLoading(true);
@@ -120,13 +107,18 @@ export function History() {
   useEffect(() => { loadDocs(); }, []);
 
   const allCats = useMemo(() =>
-    ['Todas', ...Array.from(new Set(docs.map(d => d.categoria))).sort()],
+    ['Todas', ...Array.from(new Set(docs.map(d => (d.categoria && d.categoria.trim() !== '') ? d.categoria : 'General'))).sort()],
     [docs]
   );
 
   const filtered = useMemo(() => {
     let list = [...docs];
-    if (cat !== 'Todas') list = list.filter(d => d.categoria === cat);
+    if (cat !== 'Todas') {
+      list = list.filter(d => {
+        const catName = (d.categoria && d.categoria.trim() !== '') ? d.categoria : 'General';
+        return catName === cat;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(d =>
@@ -135,31 +127,33 @@ export function History() {
         (d.keywords?.some(k => k?.toLowerCase().includes(q)))
       );
     }
-    // Sort by probabilidadCategoria as proxy (no date field from backend)
-    return sortDir === 'desc'
-      ? list.sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0))
-      : list.sort((a, b) => (a.probabilidadCategoria || 0) - (b.probabilidadCategoria || 0));
-  }, [docs, search, cat, sortDir]);
+
+    const getItemTime = (item: DocumentResponse) => {
+      const anyItem = item as any;
+      if (anyItem.fecha) return new Date(anyItem.fecha).getTime();
+      if (anyItem.createdAt) return new Date(anyItem.createdAt).getTime();
+      if (anyItem.created_at) return new Date(anyItem.created_at).getTime();
+      const parsedId = parseInt(String(item.docId || 0), 10);
+      return isNaN(parsedId) ? 0 : parsedId;
+    };
+
+    if (sortOption === 'recent-desc') {
+      return list.sort((a, b) => getItemTime(b) - getItemTime(a));
+    }
+    if (sortOption === 'recent-asc') {
+      return list.sort((a, b) => getItemTime(a) - getItemTime(b));
+    }
+    if (sortOption === 'prec-desc') {
+      return list.sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0));
+    }
+    return list.sort((a, b) => (a.probabilidadCategoria || 0) - (b.probabilidadCategoria || 0));
+  }, [docs, search, cat, sortOption]);
 
   const totalPages = useMemo(() => Math.ceil(filtered.length / PAGE_SIZE), [filtered.length]);
   const pagedFiltered = useMemo(
     () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     [filtered, currentPage]
   );
-
-  const handleDelete = async (doc: DocumentResponse) => {
-    if (!window.confirm(`¿Eliminar "${doc.title}"?`)) return;
-    setDeleting(doc.docId);
-    try {
-      await documentService.deleteByTitle(doc.title);
-      setDocs(prev => prev.filter(d => d.docId !== doc.docId));
-      if (detailDoc?.docId === doc.docId) setDetailDoc(null);
-    } catch {
-      alert('Error al eliminar el documento.');
-    } finally {
-      setDeleting(null);
-    }
-  };
 
   const handleRowClick = async (doc: DocumentResponse) => {
     // Si ya está abierto, cerrarlo
@@ -217,14 +211,22 @@ export function History() {
 
         <CatDropdown value={cat} options={allCats} onChange={setCat} />
 
-        <button
-          id="history-sort-btn"
-          className="hist-sort-btn"
-          onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
+        <select 
+          value={sortOption} 
+          onChange={e => setSortOption(e.target.value as any)}
+          style={{
+            background: 'var(--clr-surface)', border: '1px solid var(--clr-border)', 
+            color: 'var(--clr-text-muted)', borderRadius: 'var(--radius-sm)',
+            padding: '8px 12px', fontSize: '0.85rem', cursor: 'pointer',
+            height: '36px',
+            outline: 'none',
+          }}
         >
-          <Filter size={13} />
-          {sortDir === 'desc' ? 'Mayor precisión' : 'Menor precisión'}
-        </button>
+          <option value="recent-desc">Más recientes primero</option>
+          <option value="recent-asc">Más antiguos primero</option>
+          <option value="prec-desc">Mayor precisión</option>
+          <option value="prec-asc">Menor precisión</option>
+        </select>
 
         <button
           className="hist-sort-btn"
@@ -247,12 +249,12 @@ export function History() {
         ) : (
           <table>
             <colgroup>
-              <col className="col-num" />
+              <col className="col-num" style={{ width: 65 }} />
               <col className="col-titulo" />
-              <col className="col-cat" />
-              <col className="col-conf" />
-              <col style={{ width: 80 }} />
-              <col style={{ width: 50 }} />
+              <col className="col-cat" style={{ width: 160 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 90 }} />
+              <col className="col-conf" style={{ width: 140 }} />
             </colgroup>
             <thead>
               <tr>
@@ -262,22 +264,23 @@ export function History() {
                 <th>Idioma</th>
                 <th>Nivel</th>
                 <th>Precisión</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr className="table-empty-row">
-                  <td colSpan={7}>
+                  <td colSpan={6}>
                     {docs.length === 0
                       ? 'No hay documentos aún — analiza tu primer contenido'
                       : 'No se encontraron resultados'}
                   </td>
                 </tr>
               ) : pagedFiltered.map((doc, i) => {
-                const col = CATEGORY_COLORS[doc.categoria] ?? THEME.primary;
-                const pct = Math.round(doc.probabilidadCategoria * 100);
+                const categoryName = (doc.categoria && doc.categoria.trim() !== '') ? doc.categoria : 'General';
+                const col = CATEGORY_COLORS[categoryName] ?? THEME.primary;
+                const pct = Math.round((doc.probabilidadCategoria || 0) * 100);
                 const isActive = detailDoc?.docId === doc.docId;
+                const rowNum = (currentPage - 1) * PAGE_SIZE + i + 1;
                 return (
                   <tr
                     key={doc.docId}
@@ -285,7 +288,7 @@ export function History() {
                       background: isActive ? 'var(--clr-primary-alpha, rgba(37,99,235,0.08))' : undefined }}
                     onClick={() => handleRowClick(doc)}
                   >
-                    <td className="td-num col-num">{i + 1}</td>
+                    <td className="td-num col-num">{rowNum}</td>
                     <td className="td-titulo">
                       <div>{doc.title}</div>
                       {doc.keywords?.length > 0 && (
@@ -308,8 +311,8 @@ export function History() {
                         className="cat-badge"
                         style={{ background: `${col}14`, color: col, border: `1px solid ${col}28` }}
                       >
-                        <CategoryIcon category={doc.categoria} size={14} />
-                        <span>{doc.categoria}</span>
+                        <CategoryIcon category={categoryName} size={14} />
+                        <span>{categoryName}</span>
                       </span>
                     </td>
                     <td style={{ color: 'var(--clr-text-muted)', fontSize: '0.78rem' }}>
@@ -325,29 +328,6 @@ export function History() {
                         </div>
                         <span className="conf-val">{pct}%</span>
                       </div>
-                    </td>
-                    <td>
-                      <button
-                        onClick={e => { e.stopPropagation(); handleDelete(doc); }}
-                        disabled={deleting === doc.docId}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: deleting === doc.docId ? 'var(--clr-text-muted)' : 'var(--clr-danger)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          borderRadius: 6,
-                          display: 'flex',
-                          alignItems: 'center',
-                          opacity: 0.6,
-                          transition: 'opacity 0.2s',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                        onMouseLeave={e => (e.currentTarget.style.opacity = '0.6')}
-                        title="Eliminar documento"
-                      >
-                        <Trash2 size={14} />
-                      </button>
                     </td>
                   </tr>
                 );
@@ -366,119 +346,87 @@ export function History() {
           </div>
         )}
       </div>
-      {/* ── Detail Drawer ── */}
+      {/* ── Document Modal (centered, full content) ── */}
       {detailDoc && (
         <div
-          ref={drawerRef}
-          style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 340,
-            background: 'var(--clr-surface-elevated, var(--clr-surface))',
-            borderLeft: '1px solid var(--clr-border)',
-            padding: '28px 24px',
-            overflowY: 'auto',
-            zIndex: 200,
-            boxShadow: '-4px 0 32px rgba(0,0,0,0.25)',
-            animation: 'slideInRight 0.22s ease',
-          }}
+          className="doc-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setDetailDoc(null); }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BookOpen size={16} style={{ color: 'var(--clr-primary)' }} />
-              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Detalle del documento</span>
-            </div>
-            <button
-              onClick={() => setDetailDoc(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)', display: 'flex' }}
-            >
-              <X size={16} />
-            </button>
-          </div>
+          <div className="doc-modal">
 
-          {detailLoading ? (
-            <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.85rem' }}>Cargando detalle…</div>
-          ) : (
-            <>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 12, lineHeight: 1.4 }}>
-                {detailDoc.title}
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.82rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--clr-text-muted)' }}>Categoría</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600,
-                    color: CATEGORY_COLORS[detailDoc.categoria] ?? THEME.primary }}>
-                    <CategoryIcon category={detailDoc.categoria} size={13} />
-                    {detailDoc.categoria}
-                  </span>
+            {/* Header */}
+            <div className="doc-modal-header">
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                <div className="doc-modal-icon">
+                  <FileText size={22} />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--clr-text-muted)' }}>Nivel</span>
-                  <span style={{ fontWeight: 600 }}>{detailDoc.nivel ?? '—'}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--clr-text-muted)' }}>Precisión IA</span>
-                  <span style={{ fontWeight: 600, color: CATEGORY_COLORS[detailDoc.categoria] ?? THEME.primary }}>
-                    {Math.round(detailDoc.probabilidadCategoria * 100)}%
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--clr-text-muted)' }}>ID</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{detailDoc.docId}</span>
-                </div>
-              </div>
-
-              {detailDoc.keywords?.length > 0 && (
-                <div style={{ marginTop: 18 }}>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)', marginBottom: 8 }}>Keywords</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {detailDoc.keywords.map(kw => (
-                      <span key={kw} style={{
-                        fontSize: '0.72rem',
-                        background: 'var(--clr-surface)',
-                        border: '1px solid var(--clr-border)',
-                        borderRadius: 6,
-                        padding: '3px 8px',
-                        color: 'var(--clr-text-muted)',
-                      }}>{kw}</span>
-                    ))}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 className="doc-modal-title">{detailDoc.title}</h2>
+                  <div className="doc-modal-meta">
+                    <span className="doc-modal-cat"
+                      style={{ background: `${CATEGORY_COLORS[detailDoc.categoria] ?? THEME.primary}18`, color: CATEGORY_COLORS[detailDoc.categoria] ?? THEME.primary }}>
+                      <CategoryIcon category={detailDoc.categoria} size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                      {detailDoc.categoria}
+                    </span>
+                    <span className="doc-modal-conf">{Math.round((detailDoc.probabilidadCategoria || 0) * 100)}% confianza</span>
+                    {detailDoc.nivel && (
+                      <span className="doc-modal-conf" style={{ opacity: 0.7 }}>· {detailDoc.nivel}</span>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
+              <button
+                onClick={() => setDetailDoc(null)}
+                className="doc-modal-close"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-              {detailDoc.content && (
-                <div style={{ marginTop: 18 }}>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)', marginBottom: 6 }}>Vista previa</p>
-                  <p style={{ fontSize: '0.8rem', lineHeight: 1.6, color: 'var(--clr-text)', opacity: 0.8 }}>
-                    {detailDoc.content.slice(0, 300)}{detailDoc.content.length > 300 ? '…' : ''}
-                  </p>
-                </div>
+            {/* Keywords */}
+            {detailDoc.keywords && detailDoc.keywords.length > 0 && (
+              <div className="doc-modal-keywords">
+                <Tag size={13} style={{ color: 'var(--clr-secondary)', flexShrink: 0 }} />
+                {detailDoc.keywords.map(kw => (
+                  <span key={kw} className="doc-modal-kw-chip">{kw}</span>
+                ))}
+              </div>
+            )}
+
+            {/* Cuerpo principal */}
+            <div className="doc-modal-body">
+              {detailLoading ? (
+                <div style={{ color: 'var(--clr-text-muted)', fontSize: '0.88rem' }}>Cargando contenido completo…</div>
+              ) : detailDoc.content ? (
+                <p className="doc-modal-content">{detailDoc.content}</p>
+              ) : (
+                <p style={{ color: 'var(--clr-text-muted)', fontStyle: 'italic', fontSize: '0.88rem' }}>Sin contenido disponible.</p>
               )}
 
               {/* Recomendaciones Semánticas */}
-              <div style={{ marginTop: 24, borderTop: '1px solid var(--clr-border)', paddingTop: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <div style={{ marginTop: 32, borderTop: '1px solid var(--clr-border)', paddingTop: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
                   <Sparkles size={14} style={{ color: 'var(--clr-primary)' }} />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Contenido Relacionado</span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>Contenido Relacionado</span>
                 </div>
-                
+
                 {recsLoading ? (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)' }}>Analizando similitudes…</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--clr-text-muted)' }}>Analizando similitudes…</div>
                 ) : recommendations.length === 0 ? (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)' }}>No se encontraron documentos similares.</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--clr-text-muted)' }}>No se encontraron documentos similares.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {recommendations.map(rec => (
-                      <div key={rec.doc_id} style={{ 
-                        background: 'var(--clr-surface)', 
-                        border: '1px solid var(--clr-border)', 
-                        borderRadius: 8, padding: 12 
+                      <div key={rec.doc_id} style={{
+                        background: 'var(--clr-surface)',
+                        border: '1px solid var(--clr-border)',
+                        borderRadius: 10, padding: '12px 14px',
                       }}>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4 }}>
-                          {rec.title}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--clr-text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{rec.title}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--clr-text-muted)', display: 'flex', justifyContent: 'space-between' }}>
                           <span>{rec.source_type}</span>
-                          <span style={{ color: 'var(--clr-primary)', fontWeight: 600 }}>
+                          <span style={{ color: 'var(--clr-primary)', fontWeight: 700 }}>
                             {Math.round(rec.similarity_score * 100)}% similitud
                           </span>
                         </div>
@@ -487,24 +435,8 @@ export function History() {
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={() => handleDelete(detailDoc)}
-                disabled={deleting === detailDoc.docId}
-                style={{
-                  marginTop: 24, width: '100%', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', gap: 6,
-                  background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-                  color: 'var(--clr-danger)', borderRadius: 8, padding: '9px 0',
-                  cursor: 'pointer', fontSize: '0.83rem', fontWeight: 600,
-                  transition: 'background 0.2s',
-                }}
-              >
-                <Trash2 size={13} />
-                {deleting === detailDoc.docId ? 'Eliminando…' : 'Eliminar documento'}
-              </button>
-            </>
-          )}
+            </div>
+          </div>
         </div>
       )}
     </main>
