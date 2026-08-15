@@ -188,14 +188,6 @@ public class DocumentService {
 
         for(DocumentoSimilitud sim : similitudes) {
 
-            System.out.println(sim);
-
-
-//            Document doc = documentRepository.FindByTitle(sim.title())
-//                            .orElseThrow(() -> new DocumentNotFoundException(sim.title()));
-//
-//            System.out.println("DOCUMENT: "+doc);
-
             docIds.add(sim.docId());
 
         }
@@ -211,6 +203,32 @@ public class DocumentService {
 
     }
 
+
+    public List<DocumentResponse> search(String query, int topK) {
+
+        RecomendacionResponse response = aiClient.search(query, topK);
+
+        List<DocumentoSimilitud> similitudes = response.resultados();
+
+        List<String> docIds = new ArrayList<>();
+
+        for(DocumentoSimilitud sim : similitudes) {
+
+            docIds.add(sim.docId());
+
+        }
+
+        List<DocumentResponse> responseList = documentRepository.findByByDocIdIn(docIds)
+                .stream()
+                .map(dtoMapper::ToResponse)
+                .toList();
+
+        return responseList;
+
+    }
+
+
+
     //  Convierte el string de nivel que viene de Python al enum Nivel.
      
     private Nivel parseNivel(String nivelStr) {
@@ -222,4 +240,6 @@ public class DocumentService {
         }
         return Nivel.Intermedio; // fallback seguro
     }
+
+
 }

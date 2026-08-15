@@ -71,9 +71,24 @@ public class DocumentController {
     }
 
     @GetMapping("/recommend/{docid}/{topK}")
-    public List<DocumentResponse> getRecommendDocuments(@PathVariable String docid,@PathVariable int topK) {
+    public List<DocumentResponse> getRecommendDocuments(
+            @PathVariable String docid,
+            @PathVariable int topK) {
 
         return service.recommend(docid, topK);
+
+    }
+
+
+    @GetMapping("/search/{query}/{topK}")
+    public List<DocumentResponse> getSearchDocuments(
+            @PathVariable String query,
+            @PathVariable int topK
+    ) {
+
+        return service.search(query,topK);
+
+
 
     }
 
