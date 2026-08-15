@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, SlidersHorizontal, Loader2, Sparkles, Tag, X } from 'lucide-react';
+import { Search, Loader2, Sparkles, Tag, X } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pagination } from '@/components/ui/Pagination';
@@ -42,7 +42,7 @@ export function SearchPage() {
   const [selectedCats, setSelectedCats] = useState<string[]>(initialCat ? [initialCat] : []);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [semanticResults, setSemanticResults] = useState<DocumentoSimilitudResponse[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -164,7 +164,8 @@ export function SearchPage() {
   // Categorías filtradas por la letra seleccionada
   const displayedCategories = useMemo(() => {
     const all = Object.keys(categoryStats).sort();
-    if (!selectedLetter || selectedLetter === 'TODAS') return all;
+    if (!selectedLetter) return [];
+    if (selectedLetter === 'TODAS') return all;
     return all.filter(cat => cat.toUpperCase().startsWith(selectedLetter));
   }, [categoryStats, selectedLetter]);
 
@@ -245,10 +246,6 @@ export function SearchPage() {
               if (!e.target.value.trim()) { setDocs(allDocs); setSearchMode('all'); }
             }}
           />
-          <button type="button" className="btn btn-ghost btn-sm filter-toggle" onClick={() => setShowFilters(v => !v)}>
-            <SlidersHorizontal size={14} />
-            Filtros
-          </button>
           <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>Buscar</button>
         </form>
         {searchMode !== 'all' && !loading && (
@@ -316,7 +313,7 @@ export function SearchPage() {
         </div>
 
         <div className="search-cat-grid">
-          {displayedCategories.length === 0 ? (
+          {!selectedLetter ? null : displayedCategories.length === 0 ? (
             <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', padding: '8px 0' }}>
               No se encontraron categorías que comiencen con la letra <strong>'{selectedLetter}'</strong>
             </div>
@@ -408,9 +405,9 @@ export function SearchPage() {
                   background: 'rgba(37,99,235,0.07)',
                   border: '1px solid rgba(37,99,235,0.18)',
                   borderRadius: 10,
-                  fontSize: '0.82rem', color: 'var(--clr-primary)',
+                  fontSize: '0.82rem', color: 'var(--clr-text)',
                 }}>
-                  <Sparkles size={15} />
+                  <Sparkles size={15} style={{ color: 'var(--clr-primary)' }} />
                   <span>
                     No se encontró una coincidencia exacta.{' '}
                     <strong>El motor de IA encontró {enrichedSemanticResults.length} documento{enrichedSemanticResults.length !== 1 ? 's' : ''} similares:</strong>
