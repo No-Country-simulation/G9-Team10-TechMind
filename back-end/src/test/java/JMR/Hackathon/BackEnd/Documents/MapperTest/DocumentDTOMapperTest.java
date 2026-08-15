@@ -4,6 +4,7 @@ import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
 import JMR.Hackathon.BackEnd.Documents.api.mapper.DocumentDTOMapper;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
+import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,9 +18,12 @@ class DocumentDTOMapperTest {
 
     private DocumentDTOMapper mapper;
 
+
     @BeforeEach
     void setUp() {
         mapper = new DocumentDTOMapper();
+
+
     }
 
     // ─────────────────────────────────────────────

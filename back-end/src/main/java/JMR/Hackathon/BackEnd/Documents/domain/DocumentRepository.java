@@ -23,4 +23,8 @@ public interface DocumentRepository {
 
     List<Document> findAllById(List<Long> ids);
 
+    List<Document> findByByDocIdIn(List<String> docId);
+
+
+
 }

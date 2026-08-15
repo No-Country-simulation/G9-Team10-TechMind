@@ -70,10 +70,10 @@ public class DocumentController {
 
     }
 
-    @GetMapping("/recommend/{traceid}")
-    public List<DocumentResponse> getRecommendDocuments(String traceid) {
+    @GetMapping("/recommend/{docid}/{topK}")
+    public List<DocumentResponse> getRecommendDocuments(@PathVariable String docid,@PathVariable int topK) {
 
-        return service.recommend(traceid);
+        return service.recommend(docid, topK);
 
     }
 

@@ -3,9 +3,7 @@ package JMR.Hackathon.BackEnd.Documents.api;
 
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeyword;
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
-import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
-import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
-import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.*;
 import JMR.Hackathon.BackEnd.Documents.api.mapper.DocumentDTOMapper;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
@@ -178,15 +176,38 @@ public class DocumentService {
     }
 
 
-    public List<DocumentResponse> recommend(String traceId) {
+    public List<DocumentResponse> recommend(String docId, int topK) {
 
-        //llamar a python aiclient
+        RecomendacionResponse response = aiClient.recommend(docId, topK);
 
-        //buscar los documents recomendados
+        List<DocumentoSimilitud> similitudes = response.resultados();
 
-        //devolverlos en list
+        System.out.println("SIMILITUDES:" + similitudes);
 
-    return null;
+        List<String> docIds = new ArrayList<>();
+
+        for(DocumentoSimilitud sim : similitudes) {
+
+            System.out.println(sim);
+
+
+//            Document doc = documentRepository.FindByTitle(sim.title())
+//                            .orElseThrow(() -> new DocumentNotFoundException(sim.title()));
+//
+//            System.out.println("DOCUMENT: "+doc);
+
+            docIds.add(sim.docId());
+
+        }
+
+        List<DocumentResponse> responseList = documentRepository.findByByDocIdIn(docIds)
+                .stream()
+                .map(dtoMapper::ToResponse)
+                .toList();
+
+        System.out.println("RESPONSE: "+ responseList);
+
+        return responseList;
 
     }
 

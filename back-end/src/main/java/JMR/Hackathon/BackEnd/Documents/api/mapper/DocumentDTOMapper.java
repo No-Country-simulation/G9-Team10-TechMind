@@ -2,10 +2,15 @@ package JMR.Hackathon.BackEnd.Documents.api.mapper;
 
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentoSimilitud;
+import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecomendacionResponse;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
+import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -49,4 +54,6 @@ public class DocumentDTOMapper {
                 .content(request.content())
                 .build();
     }
+
+
 }

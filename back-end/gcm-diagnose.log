@@ -1,0 +1,200 @@
+﻿Diagnose log at 2026-07-17T22:34:11Z
+
+AppPath: D:\Git\mingw64\bin\git-credential-manager.exe
+InstallDir: D:\Git\mingw64\bin\
+Version: 2.6.1+786ab03440ddc82e807a97c0e540f5247e44cec6
+
+------------
+Diagnostic: Environment
+Skipped: False
+Success: True
+Exception: None
+Log:
+OSType: Windows
+OSVersion: 10.0 (build 26200)
+Reading environment variables... OK
+ Variables:
+HOMEPATH=\Users\Usuario
+DriverData=C:\Windows\System32\Drivers\DriverData
+TERMINAL_EMULATOR=JetBrains-JediTerm
+GIT_TRACE2_PARENT_SID=5e937ff1-1624-45cd-9de2-0f22790d2ba8
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+OneDrive=C:\Users\Usuario\OneDrive
+INTELLIJ_TERMINAL_COMMAND_BLOCKS_REWORKED=1
+SESSIONNAME=Console
+TMP=C:\Users\Usuario\AppData\Local\Temp
+HOME=C:\Users\Usuario
+LC_CTYPE=C.UTF-8
+PROCESSOR_ARCHITECTURE=x86
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW;.CPL
+EFC_3980_4126798990=1
+EFC_3980_3789132940=1
+JETBRAINS_INTELLIJ_COMMAND_END_MARKER=WkAytsiMBCRNKEMAkryfgPu76hgm1ksdFRnavf6xYUYK6SLmGz9SOMX2LFDsP5HI
+TEMP=C:\Users\Usuario\AppData\Local\Temp
+LOCALAPPDATA=C:\Users\Usuario\AppData\Local
+MSYSTEM=MINGW64
+TERM=xterm-256color
+M2_HOME=C:\Program Files\apache-maven-3.9.11
+ProgramData=C:\ProgramData
+JAVA_HOME=C:\Users\Usuario\.jdks\ms-21.0.10
+USERDOMAIN=JMR
+ProgramFiles(x86)=C:\Program Files (x86)
+PROCESSOR_REVISION=8c01
+Path=D:/Git/mingw64/libexec/git-core;D:\Git\mingw64\bin;D:\Git\usr\bin;C:\Users\Usuario\bin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Users\Usuario\.jdks\ms-21.0.10\bin;C:\Users\Usuario\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\dotnet\;C:\Program Files (x86)\Common Files\Acronis\SnapAPI\;D:\Git\cmd;C:\mingw64\bin;C:\Program Files\apache-maven-3.9.11;C:\Program Files\apache-maven-3.9.11\bin;C:\Program Files\nodejs\;C:\Program Files\MySQL\MySQL Server 8.0\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Users\Usuario\AppData\Local\Microsoft\WindowsApps;C:\Users\Usuario\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\Usuario\.dotnet\tools;C:\Program Files\apache-maven-3.9.11;C:\Users\Usuario\AppData\Roaming\npm;C:\Program Files\MySQL\MySQL Server 8.0\bin;
+PROCESSOR_LEVEL=6
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 140 Stepping 1, GenuineIntel
+TMPDIR=C:\Users\Usuario\AppData\Local\Temp
+APPDATA=C:\Users\Usuario\AppData\Roaming
+PROCESS_LAUNCHED_BY_CW=1
+PSModulePath=C:\Users\Usuario\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+PUBLIC=C:\Users\Public
+NUMBER_OF_PROCESSORS=4
+PROCESS_LAUNCHED_BY_Q=1
+CommonProgramFiles=C:\Program Files (x86)\Common Files
+MySql=C:\Program Files\MySQL\MySQL Server 8.0\bin
+IGCCSVC_DB=AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAA6wgmS1VtckKgCC0QCo0YFwQAAAACAAAAAAAQZgAAAAEAACAAAADl9Bbp0rScFjsYdyUNR5EleAi1Ke+rPileVNIDAB8o4gAAAAAOgAAAAAIAACAAAADi56cuXABUmUecvGUU15EAgldqceX97hsiflHZvxKRqWAAAAA7knoh1hcYxT7bYvCF1TDWoq09pTOPaKdivW+QlXea0YM+HeXmyu3Shub237cSZPTAtO1Y65lc3hc/wFCklweilEzzP0MIkqPcuGZ32BHDAzQjd6UmGYfFSm1n80svuTxAAAAAvLCuvum4iyIy9BfF3rJkGmcaPAWDmD3hTwdIJOxT5nKn6vnQhRTOl4NtdJJs4hJElGL3ZPi2/0VVMT3l+gXkpw==
+PLINK_PROTOCOL=ssh
+COLORTERM=truecolor
+ProgramW6432=C:\Program Files
+ProgramFiles=C:\Program Files (x86)
+EFC_3980_1262719628=1
+SystemRoot=C:\WINDOWS
+TERM_SESSION_ID=39c26714-46f9-47d3-8ad3-148667db0ed0
+EFC_3980_344590478=1
+COMPUTERNAME=JMR
+CommonProgramW6432=C:\Program Files\Common Files
+ZES_ENABLE_SYSMAN=1
+LOGONSERVER=\\JMR
+FIG_TERM=1
+GIT_EXEC_PATH=D:/Git/mingw64/libexec/git-core
+FPS_BROWSER_USER_PROFILE_STRING=Default
+EFC_3980_1592913036=1
+USERDOMAIN_ROAMINGPROFILE=JMR
+EFC_3980_2283032206=1
+EFC_3980_2775293581=1
+HOMEDRIVE=C:
+VBOX_MSI_INSTALL_PATH=C:\Program Files\Oracle\VirtualBox\
+USERNAME=Usuario
+PROCESSOR_ARCHITEW6432=AMD64
+FPS_BROWSER_APP_PROFILE_STRING=Internet Explorer
+PSExecutionPolicyPreference=Bypass
+USERPROFILE=C:\Users\Usuario
+OS=Windows_NT
+ComSpec=C:\WINDOWS\system32\cmd.exe
+SystemDrive=C:
+windir=C:\WINDOWS
+OneDriveConsumer=C:\Users\Usuario\OneDrive
+ALLUSERSPROFILE=C:\ProgramData
+
+
+------------
+Diagnostic: File system
+Skipped: False
+Success: True
+Exception: None
+Log:
+Temporary directory is 'C:\Users\Usuario\AppData\Local\Temp\'...
+Checking basic file I/O...
+Writing to temporary file 'C:\Users\Usuario\AppData\Local\Temp\c0aa43a081cc5184521f54e1'... OK
+Reading from temporary file 'C:\Users\Usuario\AppData\Local\Temp\c0aa43a081cc5184521f54e1'... OK
+Deleting temporary file 'C:\Users\Usuario\AppData\Local\Temp\c0aa43a081cc5184521f54e1'... OK
+Testing IFileSystem instance...
+UserHomePath: C:\Users\Usuario
+UserDataDirectoryPath: C:\Users\Usuario\.gcm
+GetCurrentDirectory(): C:\Users\Usuario\G9-Team10-TechMind\back-end
+
+------------
+Diagnostic: Networking
+Skipped: False
+Success: True
+Exception: None
+Log:
+Checking networking and HTTP stack...
+Creating HTTP client... OK
+IsNetworkAvailable: True
+Sending HEAD request to http://example.com...Sending HEAD request to https://example.com... OK
+ OK
+Acquiring free TCP port... OK
+Testing local HTTP loopback connections...
+Creating new HTTP listener for http://localhost:51766/... OK
+Waiting for loopback connection... OK
+Writing response... OK
+Waiting for response data... OK
+Loopback connection data OK
+
+------------
+Diagnostic: Git
+Skipped: False
+Success: True
+Exception: None
+Log:
+Getting Git version... OK
+Git version is '2.50.1.windows.1'
+Locating current repository...Git repository at 'C:/Users/Usuario/G9-Team10-TechMind/.git'
+ OK
+Listing all Git configuration... OK
+Git configuration:
+file:D:/Git/etc/gitconfig	diff.astextplain.textconv=astextplain
+file:D:/Git/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:D:/Git/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:D:/Git/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+file:D:/Git/etc/gitconfig	filter.lfs.required=true
+file:D:/Git/etc/gitconfig	http.sslbackend=schannel
+file:D:/Git/etc/gitconfig	core.autocrlf=true
+file:D:/Git/etc/gitconfig	core.fscache=true
+file:D:/Git/etc/gitconfig	core.symlinks=false
+file:D:/Git/etc/gitconfig	pull.rebase=false
+file:D:/Git/etc/gitconfig	credential.helper=manager
+file:D:/Git/etc/gitconfig	credential.https://dev.azure.com.usehttppath=true
+file:D:/Git/etc/gitconfig	init.defaultbranch=master
+file:C:/Users/Usuario/.gitconfig	user.name=JM29R
+file:C:/Users/Usuario/.gitconfig	user.email=juanmanuelrios5602@gmail.com
+file:.git/config	core.repositoryformatversion=0
+file:.git/config	core.filemode=false
+file:.git/config	core.bare=false
+file:.git/config	core.logallrefupdates=true
+file:.git/config	core.symlinks=false
+file:.git/config	core.ignorecase=true
+file:.git/config	remote.origin.url=https://github.com/No-Country-simulation/G9-Team10-TechMind.git
+file:.git/config	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+file:.git/config	branch.main.remote=origin
+file:.git/config	branch.main.merge=refs/heads/main
+file:.git/config	branch.feature/backend-jm29r.remote=origin
+file:.git/config	branch.feature/backend-jm29r.merge=refs/heads/feature/backend-jm29r
+
+
+------------
+Diagnostic: Credential storage
+Skipped: False
+Success: True
+Exception: None
+Log:
+ICredentialStore instance is of type: CredentialStore
+Writing test credential... OK
+Reading test credential... OK
+Deleting test credential... OK
+
+------------
+Diagnostic: Microsoft authentication (AAD/MSA)
+Skipped: False
+Success: True
+Exception: None
+Log:
+Broker is not enabled.
+Flow type is: Auto
+Gathering MSAL token cache data... OK
+CacheDirectory: C:\Users\Usuario\AppData\Local\.IdentityService
+CacheFileName: msal.cache
+CacheFilePath: C:\Users\Usuario\AppData\Local\.IdentityService\msal.cache
+Creating cache helper... OK
+Verifying MSAL token cache persistence... OK
+
+------------
+Diagnostic: GitHub API
+Skipped: False
+Success: True
+Exception: None
+Log:
+Using 'https://github.com/' as API target.
+Querying '/meta' endpoint... OK
+
