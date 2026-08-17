@@ -79,7 +79,7 @@ public class DocumentService {
                 .content(aiResult.texto())
                 .Categoria(aiResult.categoria())
                 .probabilidadCategoria(aiResult.probabilidadCategoria())
-                .version(Float.parseFloat(aiResult.version()))
+                .version(aiResult.version() != null ? Float.parseFloat(aiResult.version()) : 1.0f)
                 .nivel(parseNivel(aiResult.nivel()))
                 .build();
 
