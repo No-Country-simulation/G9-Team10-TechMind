@@ -1,11 +1,11 @@
-🗺️ TechMind: Área BackEnd:
+🗺️ TechMind Área BackEnd:
 Bienvenidos al repositorio back-end final del proyecto techmind clasificando documentos. En este README indagaremos con la arquitectura y construccion de la API-REST.
 
 ---
 
-## 👥 Integrantes del equipo:
+## 👥 Integrantes del equipo BACK-END:
 - Valentina Parra	Software Engineer.
-- Juan Manuel Rios	Backend Developer.
+- Juan Manuel Rios Backend Developer.
 
 ---
 
