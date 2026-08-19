@@ -10,4 +10,5 @@ Bienvenidos al repositorio back-end final del proyecto techmind clasificando doc
 ---
 
 ##Arquitectura General del Proyecto:
+
 <img width="5140" height="3420" alt="EsquemaEntero excalidraw" src="https://github.com/user-attachments/assets/8cc9400c-6e60-4a10-a25a-a6123bf18f99" />
