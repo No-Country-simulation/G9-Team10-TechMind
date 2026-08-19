@@ -28,11 +28,11 @@ Responsabilidades Principales
 - Creación y Gestión de Documentos: Es responsable de la creación, almacenamiento y recuperación de entidades Document. Esto incluye la gestión de sus metadatos
   (título, contenido, nivel) y su estado.
 - Coordinación con el Módulo de Keywords: Cuando se procesa un documento, el módulo Documents se comunica con el módulo Keywords para:
-  - Verificar si las keywords extraídas ya existen en el sistema.
-  - Solicitar la creación de aquellas keywords que sean nuevas.
-  - Gestión de la Relación Many-to-Many: A través del módulo DocumentKeyword, el módulo Documents se encarga de:
-  - Crear las relaciones entre un documento y sus keywords asociadas.
-  - Almacenar esta relación en la tabla intermedia de la base de datos SQL.
+  * Verificar si las keywords extraídas ya existen en el sistema.
+  * Solicitar la creación de aquellas keywords que sean nuevas.
+  * Gestión de la Relación Many-to-Many: A través del módulo DocumentKeyword, el módulo Documents se encarga de:
+  * Crear las relaciones entre un documento y sus keywords asociadas.
+  * Almacenar esta relación en la tabla intermedia de la base de datos SQL.
 
 
 
