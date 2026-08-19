@@ -31,11 +31,23 @@ Responsabilidades Principales
   * Verificar si las keywords extraídas ya existen en el sistema.
   * Solicitar la creación de aquellas keywords que sean nuevas.
   * Gestión de la Relación Many-to-Many: A través del módulo DocumentKeyword.
-
+La entidad se compone por:
+- ID PK (autogenerado por Mysql).
+- docId (Suministrado por data).
+- traceId (Suministrado por data).
+- title / titulo.
+- content / contenido.
+- categoria.
+- probabilidad categoria.
+- lenguage.
+- version.
+- nivel.
+  
 ---
 
 ## Modulo Keyword:
- 
+ <img width="400" alt="KeywordModulo excalidraw" src="https://github.com/user-attachments/assets/45047fda-0b8d-4089-a1bf-d248b4c4b49a" />
+
 
 
 
