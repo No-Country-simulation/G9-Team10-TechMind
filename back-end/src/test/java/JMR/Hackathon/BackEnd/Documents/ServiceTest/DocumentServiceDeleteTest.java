@@ -1,10 +1,10 @@
 package JMR.Hackathon.BackEnd.Documents.ServiceTest;
 
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
-import JMR.Hackathon.BackEnd.Documents.api.AiClient;
-import JMR.Hackathon.BackEnd.Documents.api.DocumentService;
+import JMR.Hackathon.BackEnd.Documents.infraestructure.AiClient;
+import JMR.Hackathon.BackEnd.Documents.domain.Service.DocumentService;
 import JMR.Hackathon.BackEnd.Documents.api.mapper.DocumentDTOMapper;
-import JMR.Hackathon.BackEnd.Documents.api.saveKeywords;
+import JMR.Hackathon.BackEnd.Documents.domain.Service.saveKeywords;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;

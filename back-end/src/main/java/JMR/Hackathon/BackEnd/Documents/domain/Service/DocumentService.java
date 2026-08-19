@@ -1,7 +1,6 @@
-package JMR.Hackathon.BackEnd.Documents.api;
+package JMR.Hackathon.BackEnd.Documents.domain.Service;
 
 
-import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeyword;
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.*;
 import JMR.Hackathon.BackEnd.Documents.api.mapper.DocumentDTOMapper;
@@ -9,6 +8,7 @@ import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.domain.DocumentRepository;
 import JMR.Hackathon.BackEnd.Documents.domain.Nivel;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.DocumentNotFoundException;
+import JMR.Hackathon.BackEnd.Documents.infraestructure.AiClient;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.Hasher;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
 import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;
@@ -18,7 +18,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

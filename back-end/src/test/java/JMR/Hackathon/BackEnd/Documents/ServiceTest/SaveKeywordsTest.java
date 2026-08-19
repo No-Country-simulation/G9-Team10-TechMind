@@ -2,7 +2,7 @@ package JMR.Hackathon.BackEnd.Documents.ServiceTest;
 
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeyword;
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeywordRepository;
-import JMR.Hackathon.BackEnd.Documents.api.saveKeywords;
+import JMR.Hackathon.BackEnd.Documents.domain.Service.saveKeywords;
 import JMR.Hackathon.BackEnd.Documents.domain.Document;
 import JMR.Hackathon.BackEnd.Documents.infraestructure.NormalizedText;
 import JMR.Hackathon.BackEnd.Keywords.domain.Keyword;

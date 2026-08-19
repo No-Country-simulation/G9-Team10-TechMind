@@ -1,4 +1,4 @@
-package JMR.Hackathon.BackEnd.Documents.api;
+package JMR.Hackathon.BackEnd.Documents.domain.Service;
 
 
 import JMR.Hackathon.BackEnd.DocumentKeyword.domain.DocumentKeyword;

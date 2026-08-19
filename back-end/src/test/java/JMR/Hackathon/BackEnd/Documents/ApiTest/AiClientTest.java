@@ -1,6 +1,6 @@
 package JMR.Hackathon.BackEnd.Documents.ApiTest;
 
-import JMR.Hackathon.BackEnd.Documents.api.AiClient;
+import JMR.Hackathon.BackEnd.Documents.infraestructure.AiClient;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecomendacionResponse;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
