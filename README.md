@@ -240,6 +240,18 @@ Y asigna categorías técnicas principales: `Backend`, `Frontend`, `DevOps`, `IA
 
 ---
 
+## 📚 Dataset de Prueba para Ingestión y Clasificación (`articulos_academicos_prueba.md`)
+
+El repositorio incluye el archivo [`articulos_academicos_prueba.md`](./articulos_academicos_prueba.md) con **30 artículos académicos y científicos de alta densidad (~2.000 caracteres c/u)** listos para copiar y pegar en la sección `/analyze` (Analizar). Cubren disciplinas como:
+- *Inteligencia Artificial, LLMs y Redes Neuronales*
+- *Criptografía Post-Cuántica y Computación Cuántica*
+- *Biotecnología, Inmunooncología y Terapia Génica (CRISPR / CAR-T)*
+- *Neurociencia Computacional y BCI*
+- *Energías Renovables, Micro-redes y Almacenamiento Electroquímico*
+- *Astrofísica, Ondas Gravitacionales y Ciencias Planetarias*
+
+---
+
 ## 🔗 Estrategia de Despliegue en la Nube (Oracle Cloud Infrastructure - OCI)
 
 | Recurso OCI | Rol en la Arquitectura |

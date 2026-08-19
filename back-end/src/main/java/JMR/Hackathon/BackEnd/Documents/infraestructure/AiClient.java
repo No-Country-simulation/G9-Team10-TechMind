@@ -6,6 +6,7 @@ import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecomendacionResponse;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecommendRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.SearchRequest;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -21,6 +22,7 @@ public class AiClient {
 
     private final RestClient restClient;
 
+    @Autowired
     public AiClient(@Value("${ai.api.url:http://localhost:8000}") String aiBaseUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(aiBaseUrl)

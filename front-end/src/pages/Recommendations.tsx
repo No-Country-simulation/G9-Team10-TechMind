@@ -1,170 +1,325 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sparkles, X, FileText, Hash, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Sparkles, Compass, Search, RefreshCw, Layers, BookOpen } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
 import { documentService } from '@/services/api';
 import type { DocumentResponse } from '@/types';
 import './Recommendations.css';
 
 export function Recommendations() {
-  const [docs, setDocs] = useState<DocumentResponse[]>([]);
+  const [allDocs, setAllDocs] = useState<DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [optionsDoc, setOptionsDoc] = useState<DocumentResponse | null>(null);
-  const [detailsDoc, setDetailsDoc] = useState<DocumentResponse | null>(null);
-  const navigate = useNavigate();
+  const [selectedBaseDocId, setSelectedBaseDocId] = useState<string>('');
+  const [customQuery, setCustomQuery] = useState<string>('');
+  const [recommendations, setRecommendations] = useState<DocumentResponse[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Todas');
 
-  const load = async () => {
+  // Carga inicial del corpus
+  useEffect(() => {
     setLoading(true);
+    documentService.getAll()
+      .then(docs => {
+        setAllDocs(docs);
+        if (docs.length > 0) {
+          // Seleccionar por defecto el primer documento para generar recomendaciones
+          setSelectedBaseDocId(docs[0].docId);
+          loadRecommendationsForDoc(docs[0].docId, docs);
+        }
+      })
+      .catch(() => {
+        setAllDocs([]);
+        setRecommendations([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Cargar recomendaciones basadas en un docId
+  const loadRecommendationsForDoc = async (docId: string, corpus = allDocs) => {
+    if (!docId) return;
+    setRecsLoading(true);
     try {
-      const all = await documentService.getAll();
-      // Los "recomendados" son los de mayor confianza de clasificación IA
-      const top = [...all]
-        .sort((a, b) => b.probabilidadCategoria - a.probabilidadCategoria)
-        .slice(0, 12);
-      setDocs(top);
+      const res = await documentService.getRecommendations(docId, 8);
+      const recList: DocumentResponse[] = [];
+
+      if (res && res.resultados && res.resultados.length > 0) {
+        res.resultados.forEach(r => {
+          const match = corpus.find(d => String(d.docId) === String(r.doc_id) || d.title === r.title);
+          if (match) {
+            recList.push({
+              ...match,
+              probabilidadCategoria: r.similarity_score || match.probabilidadCategoria
+            });
+          } else {
+            recList.push({
+              docId: r.doc_id || '',
+              title: r.title,
+              content: r.preview || '',
+              categoria: 'Recomendado IA',
+              probabilidadCategoria: r.similarity_score || 0.95,
+              keywords: []
+            });
+          }
+        });
+      }
+
+      // Si el backend devolvió pocas recomendaciones, complementar con documentos de la misma categoría o alta similitud
+      if (recList.length < 4) {
+        const baseDoc = corpus.find(d => String(d.docId) === String(docId));
+        if (baseDoc) {
+          const sameCategory = corpus.filter(d =>
+            String(d.docId) !== String(docId) &&
+            d.categoria === baseDoc.categoria &&
+            !recList.some(r => r.title === d.title)
+          );
+          recList.push(...sameCategory.slice(0, 6 - recList.length));
+        }
+      }
+
+      setRecommendations(recList);
     } catch {
-      setDocs([]);
+      // Fallback a documentos similares por categoría
+      const baseDoc = corpus.find(d => String(d.docId) === String(docId));
+      if (baseDoc) {
+        const related = corpus
+          .filter(d => String(d.docId) !== String(docId))
+          .sort((a, b) => {
+            if (a.categoria === baseDoc.categoria && b.categoria !== baseDoc.categoria) return -1;
+            if (b.categoria === baseDoc.categoria && a.categoria !== baseDoc.categoria) return 1;
+            return (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0);
+          })
+          .slice(0, 6);
+        setRecommendations(related);
+      }
     } finally {
-      setLoading(false);
+      setRecsLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  // Búsqueda de recomendaciones por tema personalizado
+  const handleCustomSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = customQuery.trim();
+    if (!q) return;
 
-  const handleCardClick = (doc: DocumentResponse) => {
-    setOptionsDoc(doc);
+    setRecsLoading(true);
+    try {
+      const searchResults = await documentService.search(q, 8);
+      if (searchResults && searchResults.length > 0) {
+        setRecommendations(searchResults);
+      } else {
+        // Fallback local por coincidencia de texto
+        const qLower = q.toLowerCase();
+        const matches = allDocs.filter(d =>
+          d.title.toLowerCase().includes(qLower) ||
+          d.content.toLowerCase().includes(qLower) ||
+          (d.categoria && d.categoria.toLowerCase().includes(qLower)) ||
+          (d.keywords && d.keywords.some(k => k.toLowerCase().includes(qLower)))
+        );
+        setRecommendations(matches.slice(0, 8));
+      }
+    } catch {
+      const qLower = q.toLowerCase();
+      const matches = allDocs.filter(d =>
+        d.title.toLowerCase().includes(qLower) ||
+        d.content.toLowerCase().includes(qLower) ||
+        (d.categoria && d.categoria.toLowerCase().includes(qLower))
+      );
+      setRecommendations(matches.slice(0, 8));
+    } finally {
+      setRecsLoading(false);
+    }
   };
 
-  const handleViewDetails = () => {
-    setDetailsDoc(optionsDoc);
-    setOptionsDoc(null);
-  };
+  // Categorías presentes en los documentos
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>();
+    allDocs.forEach(d => {
+      if (d.categoria && d.categoria.trim()) cats.add(d.categoria.trim());
+    });
+    return ['Todas', ...Array.from(cats).sort()];
+  }, [allDocs]);
 
-  const handleGoToKeywords = () => {
-    navigate('/keywords');
-  };
+  // Documentos destacados de alta certeza
+  const topFeaturedDocs = useMemo(() => {
+    let list = [...allDocs].sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0));
+    if (activeCategoryFilter !== 'Todas') {
+      list = list.filter(d => (d.categoria || 'General') === activeCategoryFilter);
+    }
+    return list.slice(0, 8);
+  }, [allDocs, activeCategoryFilter]);
+
+  const baseDoc = allDocs.find(d => String(d.docId) === String(selectedBaseDocId));
 
   return (
     <main className="rec-page">
       <header className="rec-header fade-up">
         <div className="rec-header-icon">
-          <Sparkles size={24} />
+          <Sparkles size={26} />
         </div>
         <div>
-          <h1 className="page-title">Documentos destacados</h1>
+          <h1 className="page-title">Motor de Recomendaciones IA</h1>
           <p className="page-description">
-            Los documentos clasificados con mayor confianza por el modelo de IA
+            Explora afinidades semánticas, descubre conexiones interdisciplinarias y navega artículos relacionados calculados por el modelo de IA.
           </p>
         </div>
       </header>
 
-      {loading ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--clr-text-muted)' }}>
-          Cargando documentos destacados…
+      {/* ── SECCIÓN 1: EXPLORADOR DE AFINIDADES SEMÁNTICAS ── */}
+      <section className="rec-explorer-card fade-up">
+        <div className="rec-explorer-header">
+          <div className="rec-explorer-title">
+            <Compass size={18} style={{ color: 'var(--clr-primary)' }} />
+            <span>Generador de Recomendaciones por Afinidad</span>
+          </div>
+          <span className="rec-explorer-tag">IA Semántica</span>
         </div>
-      ) : docs.length === 0 ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--clr-text-muted)' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>✨</div>
-          <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--clr-text)' }}>Sin documentos aún</div>
-          <p style={{ fontSize: '0.85rem' }}>Analiza documentos en la página Analizar para verlos aquí.</p>
-        </div>
-      ) : (
-        <div className="rec-grid stagger">
-          {docs.map((doc, i) => (
-            <DocumentCard 
-              key={doc.docId || i} 
-              id={doc.docId}
-              title={doc.title}
-              description={doc.content?.slice(0, 140) + (doc.content && doc.content.length > 140 ? '…' : '') || 'Sin descripción disponible.'}
-              category={doc.categoria}
-              tags={doc.keywords?.slice(0, 3) ?? []}
-              similarity={Math.round(doc.probabilidadCategoria * 100)}
-              recommended={true}
-              onClick={() => handleCardClick(doc)}
-            />
-          ))}
-        </div>
-      )}
 
-      {/* MODAL DE OPCIONES */}
-      {optionsDoc && (
-        <div className="doc-modal-overlay" onClick={() => setOptionsDoc(null)} style={{ zIndex: 1000, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="doc-modal" onClick={e => e.stopPropagation()} style={{ background: 'var(--clr-bg)', padding: '24px', borderRadius: '12px', width: '90%', maxWidth: '400px', border: '1px solid var(--clr-border)', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--clr-text)' }}>¿Qué deseas hacer?</h2>
-              <button onClick={() => setOptionsDoc(null)} style={{ background: 'transparent', border: 'none', color: 'var(--clr-text-muted)', cursor: 'pointer' }}><X size={20} /></button>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button onClick={handleViewDetails} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'var(--clr-surface)', border: '1px solid var(--clr-border)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--clr-text)', transition: 'background 0.2s' }}>
-                <div style={{ background: 'var(--clr-primary-light)', padding: '8px', borderRadius: '8px', color: 'var(--clr-primary)' }}>
-                  <FileText size={20} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, marginBottom: '2px' }}>Ver detalles</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Abre el documento en modo lectura</div>
-                </div>
-                <ArrowRight size={16} style={{ color: 'var(--clr-text-muted)' }} />
-              </button>
+        <div className="rec-explorer-controls">
+          {/* Selector de documento base */}
+          <div className="rec-select-group">
+            <label className="rec-label">
+              <BookOpen size={13} /> Selecciona un documento de referencia:
+            </label>
+            <select
+              value={selectedBaseDocId}
+              onChange={e => {
+                const id = e.target.value;
+                setSelectedBaseDocId(id);
+                setCustomQuery('');
+                loadRecommendationsForDoc(id);
+              }}
+              className="rec-select"
+            >
+              {allDocs.map(d => (
+                <option key={d.docId || d.title} value={d.docId}>
+                  {d.title} ({d.categoria || 'General'})
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <button onClick={handleGoToKeywords} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'var(--clr-surface)', border: '1px solid var(--clr-border)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--clr-text)', transition: 'background 0.2s' }}>
-                <div style={{ background: 'rgba(168, 85, 247, 0.15)', padding: '8px', borderRadius: '8px', color: '#a855f7' }}>
-                  <Hash size={20} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, marginBottom: '2px' }}>Ir a Keywords</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Explora las palabras clave</div>
-                </div>
-                <ArrowRight size={16} style={{ color: 'var(--clr-text-muted)' }} />
+          {/* O buscador por tema libre */}
+          <form onSubmit={handleCustomSearch} className="rec-query-form">
+            <label className="rec-label">
+              <Search size={13} /> O busca recomendaciones por concepto libre:
+            </label>
+            <div className="rec-query-input-wrap">
+              <input
+                type="text"
+                placeholder="Ej. 'Criptografía', 'CAR-T', 'Micro-redes', 'Modelos de Lenguaje'…"
+                value={customQuery}
+                onChange={e => setCustomQuery(e.target.value)}
+                className="rec-query-input"
+              />
+              <button type="submit" className="btn btn-primary btn-sm rec-query-btn">
+                Recomendar
               </button>
             </div>
+          </form>
+        </div>
+
+        {/* Resultados del generador */}
+        <div className="rec-results-area">
+          <div className="rec-results-title">
+            <span>
+              {customQuery.trim()
+                ? `Artículos recomendados para el tema "${customQuery.trim()}":`
+                : baseDoc
+                ? `Artículos afines a "${baseDoc.title}":`
+                : 'Artículos recomendados:'}
+            </span>
+            {recsLoading && <RefreshCw size={14} className="spin" style={{ color: 'var(--clr-primary)' }} />}
+          </div>
+
+          {recsLoading ? (
+            <div className="rec-loading">
+              <Sparkles size={24} className="spin" style={{ color: 'var(--clr-primary)', marginBottom: 8 }} />
+              <div>Calculando similitudes y afinidades semánticas…</div>
+            </div>
+          ) : recommendations.length === 0 ? (
+            <div className="rec-no-results">
+              No se encontraron recomendaciones directas. Prueba seleccionando otro documento o concepto.
+            </div>
+          ) : (
+            <div className="rec-grid stagger">
+              {recommendations.map(doc => (
+                <DocumentCard
+                  key={doc.docId || doc.title}
+                  id={doc.docId}
+                  title={doc.title}
+                  description={doc.content?.slice(0, 130) + (doc.content?.length > 130 ? '…' : '') || 'Sin descripción.'}
+                  category={doc.categoria || 'General'}
+                  tags={doc.keywords?.slice(0, 3) ?? []}
+                  similarity={Math.round((doc.probabilidadCategoria ?? 0.90) * 100)}
+                  recommended={true}
+                  onClick={() => setSelectedDoc(doc)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── SECCIÓN 2: DOCUMENTOS DESTACADOS POR CATEGORÍA ── */}
+      <section className="rec-featured-section fade-up" style={{ animationDelay: '0.15s' }}>
+        <div className="rec-featured-header">
+          <div>
+            <h2 className="rec-section-title">
+              <Layers size={18} style={{ color: 'var(--clr-secondary)' }} />
+              Lecturas Destacadas de Alta Precisión
+            </h2>
+            <p className="rec-section-sub">
+              Documentos del corpus clasificados con mayor confianza por el modelo de IA
+            </p>
+          </div>
+
+          {/* Chips de Categorías */}
+          <div className="rec-chips-bar">
+            {availableCategories.slice(0, 7).map(cat => (
+              <button
+                key={cat}
+                type="button"
+                className={`rec-chip ${activeCategoryFilter === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategoryFilter(cat)}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* MODAL DE DETALLES */}
-      {detailsDoc && (
-        <div className="doc-modal-overlay" onClick={() => setDetailsDoc(null)} style={{ zIndex: 1000, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="doc-modal" onClick={e => e.stopPropagation()} style={{ background: 'var(--clr-bg)', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto', border: '1px solid var(--clr-border)', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
-            <div className="doc-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--clr-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1 }}>
-                <div className="doc-modal-icon" style={{ background: 'var(--clr-primary-light)', padding: '12px', borderRadius: '10px', color: 'var(--clr-primary)' }}>
-                  <FileText size={24} />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '1.25rem', margin: '0 0 6px 0', color: 'var(--clr-text)' }}>{detailsDoc.title}</h2>
-                  <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem' }}>
-                    <span style={{ color: 'var(--clr-primary)', fontWeight: 600 }}>{detailsDoc.categoria}</span>
-                    <span style={{ color: 'var(--clr-text-muted)' }}>{Math.round((detailsDoc.probabilidadCategoria || 0) * 100)}% de precisión</span>
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setDetailsDoc(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)', padding: '4px' }}>
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="doc-modal-body">
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '0.95rem', color: 'var(--clr-text)' }}>Contenido:</div>
-              <p style={{ color: 'var(--clr-text-muted)', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                {detailsDoc.content || 'Sin contenido detallado disponible.'}
-              </p>
-              
-              {detailsDoc.keywords && detailsDoc.keywords.length > 0 && (
-                <div style={{ marginTop: '24px' }}>
-                  <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '0.9rem', color: 'var(--clr-text)' }}>Palabras Clave:</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {detailsDoc.keywords.map(kw => (
-                      <span key={kw} style={{ background: 'var(--clr-surface)', border: '1px solid var(--clr-border)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', color: 'var(--clr-text-subtle)' }}>
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+        {loading ? (
+          <div className="rec-loading">Cargando lecturas destacadas…</div>
+        ) : topFeaturedDocs.length === 0 ? (
+          <div className="rec-no-results">Sin documentos en esta categoría.</div>
+        ) : (
+          <div className="rec-grid stagger">
+            {topFeaturedDocs.map(doc => (
+              <DocumentCard
+                key={doc.docId || doc.title}
+                id={doc.docId}
+                title={doc.title}
+                description={doc.content?.slice(0, 130) + (doc.content?.length > 130 ? '…' : '') || 'Sin descripción.'}
+                category={doc.categoria || 'General'}
+                tags={doc.keywords?.slice(0, 3) ?? []}
+                similarity={Math.round((doc.probabilidadCategoria ?? 0.95) * 100)}
+                recommended={true}
+                onClick={() => setSelectedDoc(doc)}
+              />
+            ))}
           </div>
-        </div>
+        )}
+      </section>
+
+      {/* Modal de Detalle de Documento con Navegación Continua */}
+      {selectedDoc && (
+        <DocumentDetailModal
+          doc={selectedDoc}
+          onClose={() => setSelectedDoc(null)}
+          onSelectDoc={setSelectedDoc}
+        />
       )}
     </main>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search, Loader2, Sparkles, Tag, X } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pagination } from '@/components/ui/Pagination';
 import { CATEGORY_COLORS, ROUTES, THEME } from '@/utils/constants';
@@ -46,6 +47,7 @@ export function SearchPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [semanticResults, setSemanticResults] = useState<DocumentoSimilitudResponse[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
 
   // Carga inicial: todos los documentos
   useEffect(() => {
@@ -94,10 +96,17 @@ export function SearchPage() {
         setSearchMode('title');
       } catch {
         const q2 = q.toLowerCase();
-        const localResults = allDocs.filter(d =>
-          (d.title?.toLowerCase().includes(q2)) ||
-          (d.keywords?.some(k => k?.toLowerCase().includes(q2)))
-        );
+        const qWords = q2.split(/\s+/).filter(Boolean);
+        const localResults = allDocs.filter(d => {
+          const title = d.title?.toLowerCase() ?? '';
+          const content = d.content?.toLowerCase() ?? '';
+          const cat = d.categoria?.toLowerCase() ?? '';
+          const keywords = (d.keywords ?? []).map(k => k.toLowerCase());
+
+          if (title.includes(q2) || content.includes(q2) || cat.includes(q2)) return true;
+          if (keywords.some(k => k.includes(q2))) return true;
+          return qWords.every((w: string) => title.includes(w) || content.includes(w) || cat.includes(w) || keywords.some(k => k.includes(w)));
+        });
         setDocs(localResults);
         setSearchMode('all');
 
@@ -175,7 +184,7 @@ export function SearchPage() {
     if (selectedLevels.length) {
       list = list.filter(r => {
         const doc = docs.find(d => d.docId === r.id);
-        return doc && selectedLevels.includes(doc.nivel);
+        return Boolean(doc && doc.nivel && selectedLevels.includes(doc.nivel));
       });
     }
     return list;
@@ -229,6 +238,22 @@ export function SearchPage() {
 
   const toggleFilter = (list: string[], set: (v: string[]) => void, value: string) => {
     set(list.includes(value) ? [] : [value]);
+  };
+
+  const handleCardClick = (id?: string, title?: string) => {
+    const found = allDocs.find(d => (id && d.docId === id) || (title && d.title === title));
+    if (found) {
+      setSelectedDoc(found);
+    } else if (title) {
+      setSelectedDoc({
+        docId: id || '',
+        title: title,
+        content: '',
+        categoria: 'General',
+        probabilidadCategoria: 0.9,
+        keywords: []
+      });
+    }
   };
 
   return (
@@ -383,7 +408,7 @@ export function SearchPage() {
                 key={i}
                 {...r}
                 showSimilarity={settings.preferences.showSimilarity}
-                to={ROUTES.LIBRARY}
+                onClick={() => handleCardClick(r.id, r.title)}
               />
             ))}
 
@@ -420,7 +445,7 @@ export function SearchPage() {
                       key={i}
                       {...r}
                       showSimilarity={true}
-                      to={ROUTES.LIBRARY}
+                      onClick={() => handleCardClick(r.id, r.title)}
                     />
                   ))}
                 </div>
@@ -429,6 +454,15 @@ export function SearchPage() {
           </div>
         </section>
       </div>
+
+      {/* Modal de Detalle de Documento con Navegación Continua */}
+      {selectedDoc && (
+        <DocumentDetailModal
+          doc={selectedDoc}
+          onClose={() => setSelectedDoc(null)}
+          onSelectDoc={setSelectedDoc}
+        />
+      )}
     </main>
   );
 }

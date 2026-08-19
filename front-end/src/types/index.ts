@@ -11,12 +11,12 @@ export interface DocumentRequest {
 /** POST /document/create — response  |  GET /document/* */
 export interface DocumentResponse {
   docId: string;
-  traceId: string;
+  traceId?: string;
   title: string;
   content: string;
   categoria: string;
   probabilidadCategoria: number;
-  nivel: string;
+  nivel?: string;
   keywords: string[];
 }
 

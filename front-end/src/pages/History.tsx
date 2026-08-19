@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronDown, Check, RefreshCw, Plus, Upload, X, Sparkles, FileText, Tag } from 'lucide-react';
+import { Search, ChevronDown, Check, RefreshCw, Plus, Upload, X, Sparkles, FileText, Tag, ArrowRight } from 'lucide-react';
 import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pagination } from '@/components/ui/Pagination';
@@ -418,14 +418,28 @@ export function History() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {recommendations.map(rec => (
-                      <div key={rec.doc_id} style={{
-                        background: 'var(--clr-surface)',
-                        border: '1px solid var(--clr-border)',
-                        borderRadius: 10, padding: '12px 14px',
-                      }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{rec.title}</div>
+                      <div
+                        key={rec.doc_id}
+                        onClick={() => {
+                          const found = docs.find(d => d.docId === rec.doc_id || d.title === rec.title);
+                          if (found) handleRowClick(found);
+                          else handleRowClick({ docId: rec.doc_id, title: rec.title, content: rec.preview, categoria: 'General', probabilidadCategoria: rec.similarity_score, keywords: [] });
+                        }}
+                        style={{
+                          background: 'var(--clr-surface)',
+                          border: '1px solid var(--clr-border)',
+                          borderRadius: 10, padding: '12px 14px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                        className="hist-rec-clickable"
+                      >
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span>{rec.title}</span>
+                          <ArrowRight size={13} style={{ color: 'var(--clr-primary)', opacity: 0.8 }} />
+                        </div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--clr-text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                          <span>{rec.source_type}</span>
+                          <span>{rec.source_type || 'Semántica IA'}</span>
                           <span style={{ color: 'var(--clr-primary)', fontWeight: 700 }}>
                             {Math.round(rec.similarity_score * 100)}% similitud
                           </span>

@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Plus, Upload, RefreshCw, Search, X } from 'lucide-react';
+import { FileText, Plus, Upload, RefreshCw, Search, X, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
 import { Pagination } from '@/components/ui/Pagination';
-import { ROUTES } from '@/utils/constants';
+import { ROUTES, CATEGORY_COLORS, THEME } from '@/utils/constants';
 import { documentService } from '@/services/api';
 import type { DocumentResponse } from '@/types';
 import './MyDocuments.css';
@@ -14,32 +15,249 @@ function docToCard(doc: DocumentResponse) {
   return {
     id: doc.docId,
     title: doc.title,
-    description: doc.content?.slice(0, 120) + (doc.content?.length > 120 ? '…' : ''),
-    category: doc.categoria,
+    description: doc.content?.slice(0, 140) + (doc.content?.length > 140 ? '…' : ''),
+    category: doc.categoria && doc.categoria.trim() !== '' ? doc.categoria : 'General',
     tags: doc.keywords?.slice(0, 3) ?? [],
-    similarity: Math.round(doc.probabilidadCategoria * 100),
+    similarity: Math.round((doc.probabilidadCategoria ?? 0.85) * 100),
+    recommended: (doc.probabilidadCategoria ?? 0) >= 0.90,
   };
 }
 
-type SearchMode = 'all' | 'title';
-
 export function MyDocuments() {
+  const [allDocs, setAllDocs] = useState<DocumentResponse[]>([]);
   const [docs, setDocs] = useState<DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTitle, setSearchTitle] = useState('');
-  const [searchMode, setSearchMode] = useState<SearchMode>('all');
-
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [exactTitle, setExactTitle] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchMessage, setSearchMessage] = useState<{ text: string; type: 'info' | 'error' | 'success' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [sortOrder, setSortOrder] = useState<'recent-desc' | 'recent-asc' | 'prec-desc' | 'title-asc'>('recent-desc');
+  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
 
-  const sortedDocs = useMemo(() => {
-    return [...docs].sort((_a, _b) => {
-      // Como el backend no devuelve timestamp, asumimos que el array original de la BD 
-      // viene ordenado ascendentemente por ID/inserción.
-      // Así que simplemente invertimos (desc) o mantenemos (asc).
-      return sortOrder === 'desc' ? -1 : 1;
+  // Carga inicial de todos los documentos
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setSearchQuery('');
+    setSelectedCategory('Todas');
+    setSearchActive(false);
+    setSearchMessage(null);
+    setCurrentPage(1);
+    try {
+      const data = await documentService.getAll();
+      setAllDocs(data);
+      setDocs(data);
+    } catch {
+      setAllDocs([]);
+      setDocs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  // Lista de categorías únicas presentes en los documentos
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>();
+    allDocs.forEach(d => {
+      if (d.categoria && d.categoria.trim()) cats.add(d.categoria.trim());
     });
+    return ['Todas', ...Array.from(cats).sort()];
+  }, [allDocs]);
+
+  // Ejecución de la búsqueda
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const q = searchQuery.trim();
+
+    if (!q) {
+      // Si la búsqueda está vacía pero hay categoría seleccionada, filtramos solo por categoría
+      if (selectedCategory !== 'Todas') {
+        const filtered = allDocs.filter(d => (d.categoria || 'General') === selectedCategory);
+        setDocs(filtered);
+        setSearchActive(true);
+        setSearchMessage({
+          text: `Mostrando ${filtered.length} documento(s) en la categoría "${selectedCategory}"`,
+          type: 'info'
+        });
+      } else {
+        setDocs(allDocs);
+        setSearchActive(false);
+        setSearchMessage(null);
+      }
+      setCurrentPage(1);
+      return;
+    }
+
+    setLoading(true);
+    setSearchMessage(null);
+    setCurrentPage(1);
+    setSearchActive(true);
+
+    // ─────────────────────────────────────────────────────────────
+    // 1. MODO: BÚSQUEDA POR TÍTULO EXACTO
+    // ─────────────────────────────────────────────────────────────
+    if (exactTitle) {
+      try {
+        const doc = await documentService.getByTitle(q);
+        if (doc && doc.title) {
+          setDocs([doc]);
+          setSearchMessage({
+            text: `Documento encontrado por título exacto: "${doc.title}"`,
+            type: 'success'
+          });
+        } else {
+          throw new Error('Not found');
+        }
+      } catch {
+        // Respaldo local por si hay diferencias de mayúsculas/minúsculas
+        const localExact = allDocs.filter(d => d.title?.trim().toLowerCase() === q.toLowerCase());
+        if (localExact.length > 0) {
+          setDocs(localExact);
+          setSearchMessage({
+            text: `Documento encontrado por título exacto: "${localExact[0].title}"`,
+            type: 'success'
+          });
+        } else {
+          setDocs([]);
+          setSearchMessage({
+            text: `No se encontró ningún documento con el título exacto "${q}". Puedes desmarcar la opción de título exacto para buscar por coincidencias y palabras clave.`,
+            type: 'error'
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 2. MODO: BÚSQUEDA INTELIGENTE / FLEXIBLE / POR CONTENIDO Y KEYWORDS
+    // ─────────────────────────────────────────────────────────────
+    const qLower = q.toLowerCase();
+    const qWords = qLower.split(/\s+/).filter(Boolean);
+
+    // Filtro local exhaustivo (título, contenido, categoría, palabras clave)
+    const localMatches = allDocs.filter(doc => {
+      const title = doc.title?.toLowerCase() ?? '';
+      const content = doc.content?.toLowerCase() ?? '';
+      const cat = doc.categoria?.toLowerCase() ?? '';
+      const keywords = (doc.keywords ?? []).map(k => k.toLowerCase());
+
+      // Coincidencia directa completa
+      if (title.includes(qLower) || content.includes(qLower) || cat.includes(qLower)) return true;
+      if (keywords.some(k => k.includes(qLower))) return true;
+
+      // Coincidencia de todas las palabras buscadas
+      const matchesAllWords = qWords.every(w =>
+        title.includes(w) || content.includes(w) || cat.includes(w) || keywords.some(k => k.includes(w))
+      );
+      if (matchesAllWords) return true;
+
+      return false;
+    });
+
+    let mergedResults = [...localMatches];
+
+    // Intentar complementar con búsqueda semántica y de keywords en el backend (si está disponible)
+    try {
+      const [backendSearch, keywordSearch] = await Promise.allSettled([
+        documentService.search(q, 20),
+        documentService.getByKeyword(q)
+      ]);
+
+      const extraDocs: DocumentResponse[] = [];
+      if (backendSearch.status === 'fulfilled' && Array.isArray(backendSearch.value)) {
+        extraDocs.push(...backendSearch.value);
+      }
+      if (keywordSearch.status === 'fulfilled' && Array.isArray(keywordSearch.value)) {
+        extraDocs.push(...keywordSearch.value);
+      }
+
+      // Fusionar sin duplicados por docId o title
+      const existingIds = new Set(mergedResults.map(d => String(d.docId || d.title)));
+      extraDocs.forEach(d => {
+        const id = String(d.docId || d.title);
+        if (!existingIds.has(id)) {
+          existingIds.add(id);
+          mergedResults.push(d);
+        }
+      });
+    } catch {
+      // Si el endpoint de IA falla, los resultados locales ya están listos
+    }
+
+    // Filtrar adicionalmente por categoría si el usuario seleccionó una
+    if (selectedCategory !== 'Todas') {
+      mergedResults = mergedResults.filter(d => (d.categoria || 'General') === selectedCategory);
+    }
+
+    if (mergedResults.length > 0) {
+      setDocs(mergedResults);
+      setSearchMessage({
+        text: `Se encontraron ${mergedResults.length} documento(s) relacionados con "${q}"`,
+        type: 'info'
+      });
+    } else {
+      setDocs([]);
+      setSearchMessage({
+        text: `No se encontraron documentos que contengan o se relacionen con "${q}".`,
+        type: 'error'
+      });
+    }
+
+    setLoading(false);
+  };
+
+  // Cambio de categoría
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+    if (!searchQuery.trim()) {
+      if (cat === 'Todas') {
+        setDocs(allDocs);
+        setSearchActive(false);
+        setSearchMessage(null);
+      } else {
+        const filtered = allDocs.filter(d => (d.categoria || 'General') === cat);
+        setDocs(filtered);
+        setSearchActive(true);
+        setSearchMessage({
+          text: `Mostrando ${filtered.length} documento(s) de la categoría "${cat}"`,
+          type: 'info'
+        });
+      }
+    }
+  };
+
+  // Ordenamiento de documentos
+  const sortedDocs = useMemo(() => {
+    const list = [...docs];
+    if (sortOrder === 'recent-desc') {
+      return list.sort((a, b) => {
+        const idA = parseInt(String(a.docId || 0), 10) || 0;
+        const idB = parseInt(String(b.docId || 0), 10) || 0;
+        return idB - idA;
+      });
+    }
+    if (sortOrder === 'recent-asc') {
+      return list.sort((a, b) => {
+        const idA = parseInt(String(a.docId || 0), 10) || 0;
+        const idB = parseInt(String(b.docId || 0), 10) || 0;
+        return idA - idB;
+      });
+    }
+    if (sortOrder === 'prec-desc') {
+      return list.sort((a, b) => (b.probabilidadCategoria ?? 0) - (a.probabilidadCategoria ?? 0));
+    }
+    if (sortOrder === 'title-asc') {
+      return list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
+    }
+    return list;
   }, [docs, sortOrder]);
 
   const totalPages = useMemo(() => Math.ceil(sortedDocs.length / PAGE_SIZE), [sortedDocs.length]);
@@ -48,57 +266,14 @@ export function MyDocuments() {
     [sortedDocs, currentPage]
   );
 
-  const load = () => {
-    setLoading(true);
-    setSearchTitle('');
-    setSearchMode('all');
-    setSearchError(null);
-    setCurrentPage(1);
-    documentService.getAll()
-      .then(data => setDocs([...data])) // Guardamos como viene de la BD para poder ordenar después
-      .catch(() => setDocs([]))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, []);
-
-  // Búsqueda por título exacto en el backend
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchTitle.trim();
-    if (!q) { load(); return; }
-
-    if (q.includes('/') || q.includes('\\')) {
-      setSearchError(`Búsqueda local: el término contiene caracteres no válidos para el servidor.`);
-      setDocs(docs.filter(d => d.title?.toLowerCase().includes(q.toLowerCase())));
-      setSearchMode('title');
-      return;
-    }
-
-    setLoading(true);
-    setSearchError(null);
-    setCurrentPage(1);
-    try {
-      const doc = await documentService.getByTitle(q);
-      setDocs([doc]);
-      setSearchMode('title');
-    } catch {
-      setSearchError(`No se encontró ningún documento con el título "${searchTitle.trim()}"`);
-      setDocs([]);
-      setSearchMode('title');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Funcionalidad de eliminación deshabilitada porque el backend no expone el endpoint.
-
   return (
     <main className="mydocs-page">
       <header className="mydocs-header fade-up">
         <div>
           <h1 className="page-title">Mis documentos</h1>
-          <p className="page-description">Contenidos que has analizado y clasificado</p>
+          <p className="page-description">
+            Gestiona, busca y filtra los contenidos analizados por el modelo de IA ({allDocs.length} documentos totales)
+          </p>
         </div>
         <div className="mydocs-actions">
           <Link to={ROUTES.ANALYZE} className="btn btn-ghost">
@@ -110,110 +285,169 @@ export function MyDocuments() {
         </div>
       </header>
 
-      {/* ── Barra de búsqueda por título ── */}
-      <form
-        onSubmit={handleSearch}
-        style={{
-          display: 'flex', gap: 8, marginBottom: 24,
-          background: 'var(--clr-surface)',
-          border: '1px solid var(--clr-border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '8px 14px',
-          alignItems: 'center',
-        }}
-      >
-        <Search size={14} style={{ color: 'var(--clr-text-muted)', flexShrink: 0 }} />
-        <input
-          type="text"
-          placeholder="Buscar por título exacto…"
-          value={searchTitle}
-          onChange={e => {
-            setSearchTitle(e.target.value);
-            if (!e.target.value.trim() && searchMode === 'title') load();
-          }}
-          style={{
-            background: 'none', border: 'none', outline: 'none',
-            color: 'var(--clr-text)', fontSize: '0.875rem', flex: 1,
-          }}
-        />
-        {searchTitle && (
-          <button
-            type="button"
-            onClick={() => { setSearchTitle(''); load(); }}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--clr-text-muted)', display: 'flex', padding: 2
+      {/* ── Barra de búsqueda y controles ── */}
+      <div className="mydocs-controls-card fade-up">
+        <form onSubmit={handleSearch} className="mydocs-search-bar">
+          <Search size={16} className="mydocs-search-icon" />
+          <input
+            type="text"
+            placeholder="Buscar por palabras clave, tema, contenido o título…"
+            value={searchQuery}
+            onChange={e => {
+              setSearchQuery(e.target.value);
+              if (!e.target.value.trim() && searchActive) {
+                loadAll();
+              }
             }}
-          >
-            <X size={14} />
+            className="mydocs-search-input"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                if (searchActive) loadAll();
+              }}
+              className="mydocs-clear-btn"
+              title="Limpiar búsqueda"
+            >
+              <X size={15} />
+            </button>
+          )}
+          <button type="submit" className="btn btn-primary btn-sm mydocs-search-btn">
+            Buscar
           </button>
-        )}
-        <button type="submit" className="btn btn-primary btn-sm">Buscar</button>
 
-        <select
-          value={sortOrder}
-          onChange={e => setSortOrder(e.target.value as 'desc' | 'asc')}
-          style={{
-            background: 'none', border: '1px solid var(--clr-border)',
-            color: 'var(--clr-text)', borderRadius: 'var(--radius-sm)',
-            padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer',
-            marginLeft: 'auto'
-          }}
-        >
-          <option value="desc">Más recientes primero</option>
-          <option value="asc">Más antiguos primero</option>
-        </select>
-      </form>
+          <div className="mydocs-sort-wrapper">
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value as any)}
+              className="mydocs-sort-select"
+            >
+              <option value="recent-desc">Más recientes primero</option>
+              <option value="recent-asc">Más antiguos primero</option>
+              <option value="prec-desc">Mayor precisión / confianza</option>
+              <option value="title-asc">Título (A - Z)</option>
+            </select>
+          </div>
+        </form>
 
-      {/* Indicador de modo búsqueda */}
-      {searchMode === 'title' && !loading && (
-        <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          📄 Búsqueda por título exacto
-          <button
-            type="button"
-            onClick={load}
-            style={{ background: 'none', border: 'none', color: 'var(--clr-primary)', cursor: 'pointer', fontSize: 'inherit', padding: 0 }}
-          >
-            Ver todos
-          </button>
+        {/* ── Opciones de búsqueda y filtros por categoría ── */}
+        <div className="mydocs-filter-row">
+          <label className="mydocs-exact-toggle" title="Buscar coincidencia idéntica del título completo en la base de datos">
+            <input
+              type="checkbox"
+              checked={exactTitle}
+              onChange={e => setExactTitle(e.target.checked)}
+            />
+            <span>Búsqueda por título exacto</span>
+          </label>
+
+          {availableCategories.length > 1 && (
+            <div className="mydocs-category-chips">
+              <span className="mydocs-chips-label"><Filter size={12} /> Categoría:</span>
+              <div className="mydocs-chips-list">
+                {availableCategories.slice(0, 8).map(c => {
+                  const isActive = selectedCategory === c;
+                  const color = c !== 'Todas' ? (CATEGORY_COLORS[c] ?? THEME.primary) : undefined;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => handleCategoryChange(c)}
+                      className={`mydocs-chip ${isActive ? 'active' : ''}`}
+                      style={isActive && color ? { background: `${color}25`, borderColor: color, color } : undefined}
+                    >
+                      {color && <span className="mydocs-chip-dot" style={{ background: color }} />}
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Banner de feedback de búsqueda ── */}
+      {searchMessage && (
+        <div className={`mydocs-message-banner mydocs-message-${searchMessage.type} fade-up`}>
+          <div className="mydocs-message-content">
+            {searchMessage.type === 'error' ? (
+              <AlertCircle size={16} className="mydocs-msg-icon" />
+            ) : (
+              <CheckCircle2 size={16} className="mydocs-msg-icon" />
+            )}
+            <span>{searchMessage.text}</span>
+          </div>
+          {searchActive && (
+            <button type="button" onClick={loadAll} className="btn btn-ghost btn-sm mydocs-reset-btn">
+              <RefreshCw size={13} /> Ver todos los documentos
+            </button>
+          )}
         </div>
       )}
 
-      {searchError && (
-        <div style={{
-          color: 'var(--clr-danger)', fontSize: '0.82rem', marginBottom: 16,
-          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-          borderRadius: 8, padding: '10px 14px'
-        }}>
-          {searchError}
-        </div>
-      )}
-
+      {/* ── Grilla de documentos ── */}
       {loading ? (
-        <div className="mydocs-empty">Cargando documentos…</div>
-      ) : docs.length === 0 && !searchError ? (
-        <div className="mydocs-empty">
-          <FileText size={40} strokeWidth={1.2} />
-          <p>No tienes documentos aún</p>
-          <Link to={ROUTES.ANALYZE} className="btn btn-primary">Analizar primer documento</Link>
-          <button type="button" className="btn btn-ghost" onClick={load}>
-            <RefreshCw size={14} /> Reintentar
-          </button>
+        <div className="mydocs-empty fade-up">
+          <RefreshCw size={32} className="spin" style={{ color: 'var(--clr-primary)' }} />
+          <p>Consultando documentos en la base de datos…</p>
+        </div>
+      ) : docs.length === 0 ? (
+        <div className="mydocs-empty fade-up">
+          <FileText size={44} strokeWidth={1.2} style={{ color: 'var(--clr-text-muted)' }} />
+          <h3>No se encontraron documentos</h3>
+          <p>
+            {searchActive
+              ? 'Prueba modificando tus términos de búsqueda o desmarcando la opción de título exacto.'
+              : 'No hay documentos almacenados en la base de datos.'}
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            {searchActive && (
+              <button type="button" className="btn btn-ghost" onClick={loadAll}>
+                <RefreshCw size={14} /> Ver todos ({allDocs.length})
+              </button>
+            )}
+            <Link to={ROUTES.ANALYZE} className="btn btn-primary">
+              <Plus size={14} /> Analizar nuevo documento
+            </Link>
+          </div>
         </div>
       ) : (
         <>
           <div className="mydocs-grid stagger">
             {pagedDocs.map(doc => (
-              <div key={doc.docId} style={{ position: 'relative' }}>
-                <DocumentCard {...docToCard(doc)} />
+              <div key={doc.docId || doc.title} className="mydocs-card-wrapper">
+                <DocumentCard
+                  {...docToCard(doc)}
+                  onClick={() => setSelectedDoc(doc)}
+                />
               </div>
             ))}
           </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={page => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-          />
+
+          {totalPages > 1 && (
+            <div style={{ marginTop: 32 }}>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={page => {
+                  setCurrentPage(page);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </div>
+          )}
+
+          {/* Modal de Detalle de Documento con Navegación Continua */}
+          {selectedDoc && (
+            <DocumentDetailModal
+              doc={selectedDoc}
+              onClose={() => setSelectedDoc(null)}
+              onSelectDoc={setSelectedDoc}
+            />
+          )}
         </>
       )}
     </main>

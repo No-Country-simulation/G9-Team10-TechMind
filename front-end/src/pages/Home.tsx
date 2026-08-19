@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowRight, Brain, Cpu, TrendingUp, Zap, Database, Code2, FileText, Star, Key, Folder } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
+import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
 import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
 import { documentService, keywordService } from '@/services/api';
 import type { DocumentResponse, KeywordResponse } from '@/types';
@@ -43,11 +44,14 @@ export function Home() {
   const [totalDocs, setTotalDocs] = useState(0);
   const [catFilter, setCatFilter] = useState('');
   const [topKeywords, setTopKeywords] = useState<string[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
+  const [rawDocs, setRawDocs] = useState<DocumentResponse[]>([]);
 
   useEffect(() => {
     documentService.getAll()
       .then(docs => {
         if (docs.length > 0) {
+          setRawDocs(docs);
           setTotalDocs(docs.length);
           // Los más recientes son los últimos insertados en la base de datos
           const recentDocs = [...docs].reverse().slice(0, 3);
@@ -205,7 +209,17 @@ export function Home() {
               <Link to={ROUTES.LIBRARY} className="section-link">Ver todos <ArrowRight size={14} /></Link>
             </div>
             <div className="doc-list">
-              {recent.map((doc, i) => <DocumentCard key={i} {...doc} to={ROUTES.LIBRARY} />)}
+              {recent.map((doc, i) => (
+                <DocumentCard
+                  key={i}
+                  {...doc}
+                  onClick={() => {
+                    const found = rawDocs.find(d => d.docId === doc.id || d.title === doc.title);
+                    if (found) setSelectedDoc(found);
+                    else setSelectedDoc({ docId: doc.id || '', title: doc.title, content: doc.description, categoria: doc.category, probabilidadCategoria: (doc.similarity || 85) / 100, keywords: doc.tags });
+                  }}
+                />
+              ))}
             </div>
           </section>
 
@@ -215,11 +229,31 @@ export function Home() {
               <Link to={ROUTES.RECOMMENDATIONS} className="section-link">Ver más <ArrowRight size={14} /></Link>
             </div>
             <div className="doc-list">
-              {recommendations.map((doc, i) => <DocumentCard key={i} {...doc} recommended to={ROUTES.RECOMMENDATIONS} />)}
+              {recommendations.map((doc, i) => (
+                <DocumentCard
+                  key={i}
+                  {...doc}
+                  recommended
+                  onClick={() => {
+                    const found = rawDocs.find(d => d.docId === doc.id || d.title === doc.title);
+                    if (found) setSelectedDoc(found);
+                    else setSelectedDoc({ docId: doc.id || '', title: doc.title, content: doc.description, categoria: doc.category, probabilidadCategoria: (doc.similarity || 85) / 100, keywords: doc.tags });
+                  }}
+                />
+              ))}
             </div>
           </section>
         </div>
       </main>
+
+      {/* Modal de Detalle de Documento con Navegación Continua */}
+      {selectedDoc && (
+        <DocumentDetailModal
+          doc={selectedDoc}
+          onClose={() => setSelectedDoc(null)}
+          onSelectDoc={setSelectedDoc}
+        />
+      )}
 
       {/* ── Panel lateral derecho ── */}
       <aside className="home-side home-side-right">

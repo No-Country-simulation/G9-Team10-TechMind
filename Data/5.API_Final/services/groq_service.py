@@ -22,8 +22,8 @@ async def extraer_metadata(texto_entrada: str):
         return {"error": "API Key de Groq no configurada"}
         
     prompt = f"""
-    Eres un experto arquitecto de software y clasificador automático de conocimiento técnico.
-    Analiza el siguiente contenido técnico y extrae la información solicitada con máxima precisión.
+    Eres un experto clasificador y analista de conocimiento científico, tecnológico y académico multidisciplinario.
+    Analiza el siguiente contenido y extrae la información solicitada con máxima precisión y especificidad de dominio.
 
     DEBES responder ÚNICAMENTE con un objeto JSON válido (RFC 8259), sin bloques Markdown ni texto explicativo adicional.
     Estructura exacta requerida:
@@ -35,13 +35,17 @@ async def extraer_metadata(texto_entrada: str):
     }}
     
     Criterios de clasificación:
-    1. 'categoria': Categoría técnica principal (ej: Backend, Frontend, DevOps, IA, Data Science, Ciberseguridad, Cloud, Base de Datos, Mobile, Testing, etc.).
-    2. 'probabilidad': Número decimal entre 0.0 y 1.0 que exprese tu grado de certeza.
+    1. 'categoria': Categoría temática o científica principal más precisa. Ejemplos según el campo:
+       - Desarrollo de Software y TI: Backend, Frontend, DevOps, IA, Data Science, Ciberseguridad, Cloud, Base de Datos, Mobile, Sistemas Distribuidos, etc.
+       - Ciencias Naturales y Médicas: Biomedicina, Genómica, Neurociencia, Astrofísica, Cosmología, Climatología, Física Cuántica, etc.
+       - Ciencias Económicas y Sociales: Economía, Finanzas, etc.
+       (Elige la categoría que mejor describa la disciplina del texto; NO clasifiques textos médicos, astronómicos, climáticos o financieros como 'Data Science' si corresponden a su propia disciplina).
+    2. 'probabilidad': Número decimal entre 0.0 y 1.0 que exprese tu grado de certeza en la clasificación.
     3. 'dificultad': Nivel de complejidad conceptual y técnica. DEBES elegir ESTRICTAMENTE uno de estos 3 valores exactos:
-       - "Principiante" (conceptos introductorios, tutoriales básicos, sintaxis elemental, definiciones).
-       - "Intermedio" (aplicación práctica, integración de frameworks, APIs REST, consultas a bases de datos, patrones de diseño).
-       - "Avanzado" (arquitectura distribuida, optimización de bajo nivel, algoritmos complejos, computación cuántica, modelos profundos, escalabilidad masiva).
-    4. 'tags': Lista de 3 a 5 palabras clave técnicas más representativas del texto.
+       - "Principiante" (conceptos introductorios, tutoriales básicos, fundamentos, definiciones elementales).
+       - "Intermedio" (aplicación práctica, integración de sistemas, modelos aplicados, patrones de diseño).
+       - "Avanzado" (investigación de frontera, arquitecturas complejas, optimización de bajo nivel, demostraciones matemáticas, modelos cuánticos o biológicos avanzados).
+    4. 'tags': Lista de 3 a 5 palabras clave más representativas y relevantes del texto.
     
     Texto a analizar:
     {texto_entrada}

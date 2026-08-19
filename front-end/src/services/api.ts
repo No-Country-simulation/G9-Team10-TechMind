@@ -19,8 +19,8 @@ const CACHE_KEYS = {
   ALL_KEYWORDS: 'all_keywords',
 } as const;
 
-// En OCI Object Storage no hay proxy Nginx, debemos apuntar directo al Backend Público
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://144-33-15-98.nip.io';
+// En entorno local, las peticiones pasan por el proxy de Vite (/api -> http://localhost:8080)
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 type RequestOptions = RequestInit & {
   params?: Record<string, string | number | boolean>;
@@ -158,19 +158,25 @@ export const documentService = {
   },
 
   /**
-   * Búsqueda semántica por texto libre usando el motor de IA.
-   * Modificado para apuntar al backend de Java (Solución Temporal).
+   * Búsqueda por texto libre / similitud en backend.
+   * GET /document/search/{query}/{topK}
    */
-  semanticSearch: async (query: string, _topK = 3) => {
-    const res = await api.get<DocumentResponse[]>(`/document/search`, { params: { query } });
+  search: (query: string, topK = 20) =>
+    api.get<DocumentResponse[]>(`/document/search/${encodeURIComponent(query)}/${topK}`),
+
+  /**
+   * Búsqueda semántica por texto libre usando el motor de IA.
+   */
+  semanticSearch: async (query: string, topK = 10) => {
+    const res = await api.get<DocumentResponse[]>(`/document/search/${encodeURIComponent(query)}/${topK}`);
     
     return {
       trace_id: "N/A",
       resultados: res.map(doc => ({
         doc_id: doc.docId,
         title: doc.title,
-        source_type: "Temporal",
-        similarity_score: 0.99,
+        source_type: "Semántica",
+        similarity_score: doc.probabilidadCategoria || 0.95,
         preview: doc.content ? doc.content.substring(0, 150) + '...' : ""
       }))
     } as RecommendResponse;
