@@ -15,6 +15,10 @@ Bienvenidos al repositorio back-end final del proyecto techmind clasificando doc
 
 Se desarrollo una arquitectura modular-hexagonal donde se evidencia una relación Many-To-Many. Documents y keywords como entidades principales de la relación y Document-Keyword una entidad intermedia para registrar las relación many-to-many.
 
+¿Porque modular-hexagonal?
+
+Elegimos una arquitectura Modular-Hexagonal para mantener el proyecto organizado, desacoplado y fácil de mantener. Permite separar las responsabilidades por módulos y aislar la lógica de negocio de frameworks, bases de datos y servicios externos, facilitando la escalabilidad, el testing y la incorporación de nuevas funcionalidades.
+
 ---
 
 ## Modulo Documents:
@@ -47,6 +51,16 @@ La entidad se compone por:
 
 ## Modulo Keyword:
  <img width="400" alt="KeywordModulo excalidraw" src="https://github.com/user-attachments/assets/45047fda-0b8d-4089-a1bf-d248b4c4b49a" />
+
+ El modulo keyword se encarga de ordenar y almacenar las palabras claves obtenidas de nuestro metodo analyze. Cuenta con controller para poder filtrar documents por keyword, editar y eliminar duplicados manualmente.
+ La entidad de compone de:
+ - ID PK (autogenerado por Mysql).
+ - keyword (suministrada por AiClient)
+
+---
+
+#Modulo Document-Keyword:
+
 
 
 
