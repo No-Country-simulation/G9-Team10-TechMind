@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Sparkles, Brain, LayoutDashboard, Search, 
+  Sparkles, Brain, LayoutDashboard, 
   ArrowRight, Database, Cpu, Layers, 
-  ShieldCheck, Zap, Server, Code2, Play, Compass,
-  ChevronRight, ChevronLeft, Check, RotateCcw, X
+  ShieldCheck, Zap, Server, Code2, Compass
 } from 'lucide-react';
 import { ROUTES } from '@/utils/constants';
 import './Welcome.css';

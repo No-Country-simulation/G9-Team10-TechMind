@@ -19,7 +19,8 @@ const CACHE_KEYS = {
   ALL_KEYWORDS: 'all_keywords',
 } as const;
 
-const BASE_URL = '/api';
+// En OCI Object Storage no hay proxy Nginx, debemos apuntar directo al Backend Público
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://144-33-15-98.nip.io';
 
 type RequestOptions = RequestInit & {
   params?: Record<string, string | number | boolean>;
@@ -138,30 +139,41 @@ export const documentService = {
 
   /**
    * Solicita al motor de IA los documentos más similares a un docId dado.
-   * POST /ai/recommend
+   * Modificado para apuntar al backend de Java (Solución Temporal).
    */
-  getRecommendations: async (docId: string, topK = 5) => {
-    const res = await fetch('/ai/recommend', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doc_id: String(docId), top_k: topK })
-    });
-    if (!res.ok) throw new Error('Error al obtener recomendaciones');
-    return res.json() as Promise<RecommendResponse>;
+  getRecommendations: async (docId: string, _topK = 5) => {
+    // Solución temporal: apuntamos a Java y mapeamos la respuesta al formato que espera React
+    const res = await api.get<DocumentResponse[]>(`/document/recommend/${docId}/${_topK}`);
+    
+    return {
+      trace_id: "N/A",
+      resultados: res.map(doc => ({
+        doc_id: doc.docId,
+        title: doc.title,
+        source_type: "Temporal",
+        similarity_score: 0.99,
+        preview: doc.content ? doc.content.substring(0, 150) + '...' : ""
+      }))
+    } as RecommendResponse;
   },
 
   /**
    * Búsqueda semántica por texto libre usando el motor de IA.
-   * POST /ai/search
+   * Modificado para apuntar al backend de Java (Solución Temporal).
    */
-  semanticSearch: async (query: string, topK = 3) => {
-    const res = await fetch('/ai/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, top_k: topK })
-    });
-    if (!res.ok) throw new Error('Error en búsqueda semántica');
-    return res.json() as Promise<RecommendResponse>;
+  semanticSearch: async (query: string, _topK = 3) => {
+    const res = await api.get<DocumentResponse[]>(`/document/search`, { params: { query } });
+    
+    return {
+      trace_id: "N/A",
+      resultados: res.map(doc => ({
+        doc_id: doc.docId,
+        title: doc.title,
+        source_type: "Temporal",
+        similarity_score: 0.99,
+        preview: doc.content ? doc.content.substring(0, 150) + '...' : ""
+      }))
+    } as RecommendResponse;
   },
 };
 

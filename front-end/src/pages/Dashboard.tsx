@@ -374,7 +374,7 @@ export function Dashboard() {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(val: number, name: string) => [`${val} docs`, name]}
+                formatter={(val: any, name: any) => [`${val} docs`, name]}
                 contentStyle={{
                   background: 'var(--clr-bg-2)',
                   border: '1px solid var(--clr-border-strong)',

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, X, FileText, Hash, ArrowRight } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
-import { ROUTES } from '@/utils/constants';
 import { documentService } from '@/services/api';
 import type { DocumentResponse } from '@/types';
 import './Recommendations.css';

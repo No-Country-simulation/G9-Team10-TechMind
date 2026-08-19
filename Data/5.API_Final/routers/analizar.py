@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from models.schemas import TextoInput, AnalisisResponse
-# from services import gemini_service
+
 
 import uuid
 from core import config
@@ -43,17 +43,22 @@ async def analizar_texto(entrada: TextoInput):
         
     # Llamada real a Groq (Fase 5.3)
     from services.groq_service import extraer_metadata
-    logger.info(f"[Trace: {trace_id}] Solicitando clasificación a Groq API...")
-    metadata_gemini = await extraer_metadata(entrada.texto)
+    from services import ml_service
     
-    logger.info(f"[Trace: {trace_id}] Análisis completado. Categoría asignada: {metadata_gemini.get('categoria')}")
+    # Registrar dinámicamente en el espacio vectorial
+    ml_service.registrar_documento(doc_id, entrada.titulo, entrada.texto)
+
+    logger.info(f"[Trace: {trace_id}] Solicitando clasificación a Groq API...")
+    metadata_groq = await extraer_metadata(entrada.texto)
+    
+    logger.info(f"[Trace: {trace_id}] Análisis completado. Categoría asignada: {metadata_groq.get('categoria')}")
     return AnalisisResponse(
         Titulo=entrada.titulo,
         Texto=entrada.texto,
-        Categoria=metadata_gemini.get("categoria", "Desconocida"),
-        probabilidadCategoria=metadata_gemini.get("probabilidad", 0.0),
-        Nivel=metadata_gemini.get("dificultad", "Desconocida"),
-        keywords=metadata_gemini.get("tags", []),
+        Categoria=metadata_groq.get("categoria", "Desconocida"),
+        probabilidadCategoria=metadata_groq.get("probabilidad", 0.0),
+        Nivel=metadata_groq.get("dificultad", "Desconocida"),
+        keywords=metadata_groq.get("tags", []),
         version="1.0",
         trace_id=trace_id,
         doc_id=doc_id

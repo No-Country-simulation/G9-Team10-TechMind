@@ -34,7 +34,7 @@ export function MyDocuments() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   const sortedDocs = useMemo(() => {
-    return [...docs].sort((a, b) => {
+    return [...docs].sort((_a, _b) => {
       // Como el backend no devuelve timestamp, asumimos que el array original de la BD 
       // viene ordenado ascendentemente por ID/inserción.
       // Así que simplemente invertimos (desc) o mantenemos (asc).

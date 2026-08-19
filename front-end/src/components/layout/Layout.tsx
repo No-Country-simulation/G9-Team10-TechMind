@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import logoImg from '@/assets/icon.png';
-import techVideo from '@/assets/Tech.mp4';
+import videoClaro from '@/assets/ModoClaroTM.mp4';
+import videoOscuro from '@/assets/ModoOscuroTM-LM&DM.mp4';
 import {
   Home,
   Search,
@@ -36,8 +37,8 @@ export function Layout() {
 
   return (
     <div className={`layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      <video autoPlay loop muted playsInline className="app-video-bg">
-        <source src={techVideo} type="video/mp4" />
+      <video key={settings.theme} autoPlay loop muted playsInline className="app-video-bg">
+        <source src={settings.theme === 'dark' ? videoOscuro : videoClaro} type="video/mp4" />
       </video>
       <div className="app-video-overlay" />
 

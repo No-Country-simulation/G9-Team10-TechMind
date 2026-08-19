@@ -2,8 +2,23 @@
 
 > **Hackathon ONE G9 LATAM — Team 10**
 
-Plataforma de organización inteligente de contenido técnico usando Ciencia de Datos e IA.  
-Recibe textos técnicos y los clasifica, extrae palabras clave y los agrupa automáticamente.
+<div align="center">
+  <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=spring-boot" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/Java_17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java" />
+  <br/>
+  <img src="https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Python_3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/ONNX_Runtime-005CED?style=for-the-badge&logo=onnx&logoColor=white" alt="ONNX Runtime" />
+  <img src="https://img.shields.io/badge/Groq_API-000000?style=for-the-badge&logo=openai&logoColor=white" alt="Groq" />
+</div>
+
+<br/>
+
+**TechMind** es una plataforma integral de organización y estructuración de contenido técnico mediante Inteligencia Artificial, Machine Learning y Procesamiento de Lenguaje Natural (NLP). El sistema recibe artículos, tutoriales o documentación técnica en bruto, clasifica automáticamente el contenido en su área correspondiente (Backend, DevOps, Data Science, IA, etc.), extrae palabras clave semánticas relevantes, deduce el nivel de dificultad técnica (Principiante, Intermedio, Avanzado) y permite realizar recomendaciones y búsquedas semánticas vectoriales a partir de una base de conocimiento curada.
 
 ---
 
@@ -11,173 +26,229 @@ Recibe textos técnicos y los clasifica, extrae palabras clave y los agrupa auto
 
 | Nombre | Rol |
 |---|---|
-| **Lainus Quisbert** | Backend Developer |
 | **Rodrigo Munoz** | Data Scientist |
 | **Juan Manuel Rios** | Backend Developer |
 | **Maximiliano Rodriguez** | Data Scientist |
 | **Alexis Hinojosa Lopez** | Frontend Developer |
 | **Nairobi Betancourt** | Data Analyst |
-| **Ruben Martinez de Marigorta** | Conversational Designer |
 | **Valentina Parra** | Software Engineer |
 
 ---
 
-## 🏗️ Arquitectura del Proyecto
+## 🏗️ Arquitectura del Sistema
 
+El ecosistema está construido bajo una arquitectura de microservicios desacoplada y orientada a rendimiento:
+
+```mermaid
+graph TD
+    User([Usuario en Navegador]) -->|UI Interactiva :5173| Frontend[Frontend: React + Vite + TypeScript]
+    Frontend -->|Proxy /api/*| Backend[Backend Gateway: Spring Boot :8080]
+    Backend -->|Persistencia y Flyway| DB[(Base de Datos: MySQL :3306)]
+    Backend -->|HTTP RestClient /api/v1/*| AI[Motor IA: FastAPI :8000]
+    
+    subgraph Motor de Inteligencia Artificial
+        AI -->|Inferencia ONNX Local| ONNX[sentence-transformers INT8 + Embeddings Matrix]
+        AI -->|Extracción & Clasificación| Groq[Groq API LLM: openai/gpt-oss-120b]
+    end
 ```
-G9-Team10-TechMind/
-├── front-end/     # React 19 + TypeScript + Vite  (puerto 5173)
-├── back-end/      # Spring Boot API REST           (puerto 8080)
-└── Data/          # Jupyter Notebooks + modelos   (Python / scikit-learn)
+
+* **Frontend (`/front-end`):** SPA construida con React 19, TypeScript, Vite y TailwindCSS. Maneja el estado, renderizado reactivo de videos temáticos (Dark/Light mode), gráficos de métricas y formularios de ingestión. Corre en `http://localhost:5173`.
+* **Backend (`/back-end`):** API REST empresarial construida con Java 17 y Spring Boot. Orquesta la persistencia relacional de documentos y keywords mediante Spring Data JPA y migraciones automáticas con Flyway. Corre en `http://localhost:8080`.
+* **Motor de IA (`/Data/5.API_Final`):** Microservicio en Python con FastAPI. Aloja un pipeline híbrido: inferencia semántica local cuantizada en formato ONNX (búsqueda vectorial y recomendaciones) y LLM ultrarrápido vía Groq para extracción y clasificación. Corre en `http://localhost:8000`.
+
+---
+
+## 📦 Preparación de Modelos de Inteligencia Artificial (ONNX & Embeddings)
+
+> [!IMPORTANT]
+> Los modelos binarios de Machine Learning (`*.onnx`, `*.npy`, `*.joblib`) superan los 150 MB y **están ignorados por `.gitignore`** para evitar saturar el repositorio de Git. 
+
+Para que el microservicio de IA arranque en local, asegúrate de que existan los archivos en la carpeta `Data/5.API_Final/models/`:
+
+### Estructura requerida en `Data/5.API_Final/models/`:
+```
+Data/5.API_Final/models/
+├── dataset_reference.joblib              # 1008 documentos técnicos de referencia
+├── corpus_embeddings.npy                 # Matriz de embeddings precalculados
+└── onnx_model_quantized/
+    ├── config.json                       # Configuración del modelo
+    ├── corpus_embeddings.npy             # Matriz normalizada para similitud de coseno
+    ├── model_quantized.onnx              # Modelo sentence-transformers cuantizado a INT8
+    ├── ort_config.json                   # Configuración ONNX Runtime
+    ├── special_tokens_map.json           # Mapeo de tokens
+    ├── tokenizer.json                    # Tokenizador multilingüe rápido
+    └── tokenizer_config.json
+```
+
+### ¿Cómo regenerar los modelos si no los tienes?
+Si clonaste el repositorio desde cero y no cuentas con la carpeta `models`, puedes generarla automáticamente con los scripts incluidos:
+
+```bash
+cd Data/5.API_Final
+python -m venv .venv
+# Activar entorno virtual:
+# Windows: .\.venv\Scripts\activate
+# Linux/Mac: source .venv/bin/activate
+pip install -r requirements.txt
+
+# 1. Descarga el modelo base y lo exporta a ONNX cuantizado INT8
+python scripts/quantize_model.py
+
+# 2. Genera los embeddings vectoriales sobre el dataset de referencia
+python scripts/generate_embeddings.py
 ```
 
 ---
 
-## 🚀 Cómo correr el proyecto completo
+## ⚙️ Configuración de Variables de Entorno (.env)
 
-### Frontend (React)
-```bash
-cd front-end
-pnpm install
-pnpm dev          # → http://localhost:5173
+El proyecto incluye archivos `.env.example` listos para ser copiados a `.env` en cada uno de los microservicios:
+
+### 1. Backend (`back-end/.env`)
+Configura la conexión a tu base de datos MySQL local:
+```properties
+DB_URL=jdbc:mysql://localhost:3306/techmind
+DB_USER=root
+DB_PASSWORD=
 ```
-> Funciona en **modo demo** sin backend. Ver `front-end/README.md` para más detalle.
 
-### Backend (Spring Boot)
+### 2. Frontend (`front-end/.env`)
+Configura la ruta del proxy de desarrollo de Vite (debe ser `/api` relativa para evitar bloqueos CORS):
+```properties
+VITE_API_URL=/api
+```
+
+### 3. Motor de IA (`Data/5.API_Final/.env`)
+Configura tu clave de Groq y el modelo LLM a utilizar:
+```properties
+GROQ_API_KEY=tu_api_key_de_groq_aqui
+GROQ_MODEL=openai/gpt-oss-120b
+USE_MOCK=False
+```
+*(Si no tienes API Key de Groq, puedes establecer `USE_MOCK=True` para desarrollo sin consumo de API).*
+
+---
+
+## 🚀 Guía de Instalación y Ejecución Local (Paso a Paso)
+
+### Requisitos Previos
+1. **XAMPP / MySQL:** Con el servicio MySQL activo en el puerto `3306`.
+2. **Python 3.10+**: Con `pip` y `venv`.
+3. **Java 17+ y Maven** (o usando el wrapper `./mvnw` incluido).
+4. **Node.js 18+ y npm/pnpm**.
+
+### Paso 1: Inicializar la Base de Datos
+1. Inicia **XAMPP** y arranca el módulo **MySQL**.
+2. Abre phpMyAdmin (`http://localhost/phpmyadmin`) o tu cliente MySQL favorito.
+3. Crea una base de datos vacía llamada **`techmind`** con cotejamiento `utf8mb4_unicode_ci`.
+   *(Spring Boot y Flyway se encargarán de crear y poblar automáticamente las tablas `documents`, `keywords` y `document_keywords`).*
+
+---
+
+### Paso 2: Ejecutar los Servicios (3 Terminales)
+
+Abre **3 terminales separadas** en la raíz del proyecto `RLocal`:
+
+#### 🟢 Terminal 1: Motor de Inteligencia Artificial (FastAPI)
+```bash
+cd Data/5.API_Final
+python -m venv .venv
+.\.venv\Scripts\activate      # En Linux/Mac: source .venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
+```
+> ✅ **Listo:** Disponible en `http://localhost:8000` (Documentación Swagger interactiva en `http://localhost:8000/docs`).
+
+#### 🟢 Terminal 2: Backend Gateway (Spring Boot)
 ```bash
 cd back-end
-./mvnw spring-boot:run   # → http://localhost:8080
+./mvnw spring-boot:run        # En Windows PowerShell: .\mvnw spring-boot:run
 ```
+> ✅ **Listo:** API REST disponible en `http://localhost:8080`.
 
-### Data Science (Jupyter)
+#### 🟢 Terminal 3: Frontend (React + Vite)
 ```bash
-cd Data
-pip install -r requirements.txt
-jupyter notebook
+cd front-end
+npm install
+npm run dev
 ```
+> ✅ **Listo:** Aplicación web interactiva en `http://localhost:5173`.
 
 ---
 
-## 📡 Contrato de Datos (Frontend ↔ Backend)
+## 📡 Catálogo de Endpoints y Contratos de Datos
 
-> ⚠️ **Este es el contrato acordado.** El Frontend espera exactamente esta estructura.  
-> Cambios deben coordinarse con el equipo de Frontend.
+### Microservicio de Backend (`Spring Boot :8080`)
 
-### `POST /api/contenido`
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `POST` | `/document/create` | Recibe título y contenido, llama al motor de IA, persiste en MySQL y retorna el documento enriquecido. |
+| `GET` | `/document/all` | Retorna todos los documentos almacenados con sus keywords y metadata. |
+| `GET` | `/document/id/{id}` | Retorna un documento por su ID numérico relacional. |
+| `GET` | `/document/title/{title}` | Busca un documento por su título exacto. |
+| `GET` | `/document/keyword/{keyword}` | Retorna todos los documentos asociados a una keyword específica. |
+| `GET` | `/document/recommend/{docId}/{topK}` | Retorna los `topK` documentos más similares semánticamente a un `docId`. |
+| `GET` | `/document/search/{query}/{topK}` | Búsqueda semántica en lenguaje natural sobre el corpus. |
+| `GET` | `/keyword/findAll` | Retorna el listado global de keywords y frecuencias. |
+| `GET` | `/keyword/id/{id}` | Retorna una keyword por ID. |
 
-**Request:**
+#### Ejemplo de Request `POST /document/create`:
 ```json
 {
-  "titulo": "string",
-  "texto":  "string"
+  "title": "Computación Cuántica y Redes Neuronales",
+  "content": "La integración de algoritmos de Machine Learning con arquitecturas de computación cuántica representa uno de los paradigmas más disruptivos en la optimización de redes neuronales profundas (DNN)..."
 }
 ```
 
-**Response:**
+#### Ejemplo de Response `POST /document/create`:
 ```json
 {
-  "categoria":             "string",
-  "probabilidad":          0.89,
-  "informacion_adicional": ["keyword1", "keyword2"]
+  "id": 1,
+  "docId": "a91b827f3c4e12da",
+  "title": "Computación Cuántica y Redes Neuronales",
+  "content": "La integración de algoritmos de Machine Learning...",
+  "categoria": "IA",
+  "probabilidadCategoria": 0.97,
+  "nivel": "Avanzado",
+  "keywords": ["QuantumML", "Kubernetes", "Docker", "HybridCloud"],
+  "version": "1.0",
+  "trace_id": "7b8f9e21-4c12-4d89-9a23-123456789abc"
 }
 ```
 
 ---
 
-### `GET /api/contenido/stats`
-```json
-{
-  "total_documentos":   1247,
-  "categorias_activas": 10,
-  "precision_promedio": 91.4,
-  "documentos_hoy":     38
-}
-```
+### Microservicio de IA (`FastAPI :8000`)
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `POST` | `/api/v1/analyze` | Infiere categoría, probabilidad, nivel de dificultad y keywords mediante Groq LLM. |
+| `POST` | `/api/v1/search` | Genera el vector embedding multilingüe de la query y calcula similitud de coseno contra la matriz de 1008 documentos. |
+| `POST` | `/api/v1/recommend` | Recupera los documentos más cercanos a un `doc_id` existente reutilizando vectores precalculados. |
+| `GET` | `/health/ready` | Health check para orquestadores y balanceadores cloud. |
 
 ---
 
-### `GET /api/contenido/categories`
-```json
-[
-  { "categoria": "Backend", "count": 312, "porcentaje": 25.0 }
-]
-```
+## 🏷️ Clasificación de Dificultad y Categorías
+
+El modelo de IA clasifica los documentos en 3 niveles de complejidad:
+* **Principiante:** Introducciones, sintaxis elemental, definiciones, conceptos básicos.
+* **Intermedio:** Aplicación práctica, desarrollo de APIs, integración de librerías, bases de datos y frameworks.
+* **Avanzado:** Arquitectura distribuida, algoritmos avanzados, optimización de bajo nivel, computación cuántica, modelos matemáticos.
+
+Y asigna categorías técnicas principales: `Backend`, `Frontend`, `DevOps`, `IA`, `Data Science`, `Cloud`, `Base de Datos`, `Ciberseguridad`, `Mobile`, `Testing`, `Arquitectura`, entre otras.
 
 ---
 
-### `GET /api/contenido/keywords?limit=20`
-```json
-[
-  { "keyword": "Spring Boot", "frecuencia": 198 }
-]
-```
+## 🔗 Estrategia de Despliegue en la Nube (Oracle Cloud Infrastructure - OCI)
 
----
-
-### `GET /api/contenido/history?page=0&size=20`
-```json
-[
-  {
-    "id":           "string",
-    "titulo":       "string",
-    "categoria":    "string",
-    "probabilidad": 0.95,
-    "timestamp":    "2025-07-17T21:00:00Z"
-  }
-]
-```
-
----
-
-## 🏷️ Categorías del modelo
-
-El modelo debe devolver **exactamente** uno de estos valores en el campo `categoria`:
-
-`Backend` · `Frontend` · `DevOps` · `Data Science` · `Cloud` · `Base de Datos` · `Seguridad` · `Testing` · `Mobile` · `Arquitectura` · `Otro`
-
----
-
-## 🔗 Integración con OCI
-
-| Recurso | Uso sugerido |
+| Recurso OCI | Rol en la Arquitectura |
 |---|---|
-| **Object Storage** | Almacenar modelos `.pkl` / `.joblib` |
-| **OCI Compute** | Hospedar backend Spring Boot |
-| **OCI Functions** | Procesamiento específico de modelos |
-| **Autonomous DB** | Persistencia de historial de análisis |
+| **OCI Compute (VM Ubuntu)** | Hospedaje en contenedores Docker de Spring Boot (Gateway) y FastAPI (Motor IA). |
+| **OCI Object Storage** | Almacenamiento y versionado de modelos cuantizados `.onnx` y matrices de embeddings. |
+| **OCI MySQL Database Service / Autonomous DB** | Base de datos relacional administrada de alta disponibilidad para persistencia. |
+| **OCI Load Balancer / NGINX Ingress** | Terminación SSL/TLS, enrutamiento seguro y balanceo de carga. |
 
 ---
 
-## 📋 Estado del Proyecto
-
-- [x] Estructura del repositorio
-- [x] Frontend — Dashboard completo (demo mode)
-- [x] Frontend — Página Analizar con fallback mock
-- [x] Frontend — Historial y Keywords
-- [ ] Backend — API REST Spring Boot
-- [ ] Data Science — Modelo entrenado
-- [ ] Integración Frontend ↔ Backend
-- [ ] Integración con OCI
-
----
-
-*¡Cualquier sugerencia o edición a este documento es bienvenida!*
-
-## 🎯 Objetivos y Enfoques (En Discusión)
-La Hackathon nos permite explorar enfoques creativos. Algunas ideas sobre la mesa para discutir en nuestra primera reunión:
-*   Usar herramientas de Inteligencia Artificial (Machine Learning o LLMs) para analizar el texto.
-*   Crear una API que reciba el texto y devuelva los resultados estructurados (JSON).
-*   Armar una interfaz sencilla para probar nuestra solución.
-*   Conectar el proyecto a los servicios de nube de Oracle (OCI).
-
----
-
-## 👥 Propuesta de División de Áreas
-Para poder trabajar en paralelo y avanzar rápido, sugiero que nos dividamos en 3 grandes áreas según los intereses de cada uno:
-
-1. **Área de Data Science / IA:** 
-   - *Misión:* Encontrar la forma (modelos) de leer un texto, entenderlo y extraer las palabras clave o categorías.
-2. **Área de Backend:**
-   - *Misión:* Crear la API (el "servidor") que reciba las peticiones de los usuarios, consulte al modelo de IA y devuelva la respuesta.
-3. **Área de Frontend / Diseño:**
-   - *Misión:* Diseñar y construir la pantalla visual donde los usuarios o jueces probarán nuestro proyecto.
+*Proyecto desarrollado para la Hackathon ONE G9 LATAM.*

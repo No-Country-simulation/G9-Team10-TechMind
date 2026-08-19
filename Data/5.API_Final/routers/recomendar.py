@@ -44,8 +44,7 @@ def buscar_parecido(entrada: RecommendRequest):
     resultados = ml_service.buscar_por_id(entrada.doc_id, top_k=entrada.top_k)
     
     if "error" in resultados:
-        if "no encontrado" in resultados["error"].lower():
-            raise HTTPException(status_code=404, detail=resultados["error"])
-        raise HTTPException(status_code=500, detail=resultados["error"])
+        # Fallback sin error HTTP para no quebrar el frontend
+        return RecomendacionResponse(resultados=[], trace_id=trace_id)
         
-    return RecomendacionResponse(resultados=resultados["resultados"], trace_id=trace_id)
+    return RecomendacionResponse(resultados=resultados.get("resultados", []), trace_id=trace_id)

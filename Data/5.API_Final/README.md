@@ -14,16 +14,16 @@ Eliminamos la masiva dependencia de **PyTorch** (>2GB) y convertimos nuestro mod
 - **Performance:** Inferencias en < 50 milisegundos.
 - **Mecanismo:** Procesamos la tokenización a mano y calculamos el producto punto de los vectores embebidos generados *offline* (`dataset_reference.joblib`). El motor puede mapear textos en español con respuestas en inglés y viceversa de manera nativa sin usar traductores.
 
-### 2. 🤖 IA Generativa y Clasificación (Gemini RAG)
-Integramos **Google Gemini 1.5 Flash** para procesar los textos puros (sin estructurar) que envía Spring Boot y devolver la metadata rica, limpiamente empaquetada. 
-- **Contrato JSON Estricto:** Obligamos a Gemini a emitir respuestas en formato JSON puro (`response_mime_type="application/json"`), eliminando fallas de parseo en Java.
+### 2. 🤖 IA Generativa y Clasificación (Groq)
+Integramos **Groq (Llama 3.1 8B)** para procesar los textos puros (sin estructurar) que envía Spring Boot y devolver la metadata rica, limpiamente empaquetada. 
+- **Contrato JSON Estricto:** Obligamos al modelo a emitir respuestas en formato JSON puro, eliminando fallas de parseo en Java.
 
 ---
 
 ## 🔌 API Endpoints (Contrato Spring Boot)
 
 ### 1. `POST /api/v1/analyze` (Clasificación Automática)
-Recibe un título y texto y usa IA Generativa (Gemini) para devolver la categoría y metadata.
+Recibe un título y texto y usa IA Generativa (Groq) para devolver la categoría y metadata.
 * **Envío (Spring Boot):**
 ```json
 {
@@ -68,12 +68,12 @@ Para asegurar que este proyecto resalte en portafolios de reclutadores, hemos fo
 El proyecto está 100% contenerizado.
 
 ### Requisito previo
-Debes crear un archivo `.env` en este directorio con tu clave de Google Gemini:
+Debes crear un archivo `.env` en este directorio con tu clave de Groq:
 ```env
-GEMINI_API_KEY=AIzaSyTuClaveDeGeminiAqui
+GROQ_API_KEY=AIzaSyTuClaveDeGroqAqui
 USE_MOCK=False
 ```
-*(Nota: Si pones `USE_MOCK=True`, el servicio no consumirá cuota de Gemini y devolverá respuestas fijas instántaneas).*
+*(Nota: Si pones `USE_MOCK=True`, el servicio no consumirá cuota de Groq y devolverá respuestas fijas instántaneas).*
 
 ### Construir y Ejecutar
 Solo debes posicionarte en esta carpeta (`5.API_Final`) y ejecutar:

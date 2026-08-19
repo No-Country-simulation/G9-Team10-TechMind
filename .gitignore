@@ -108,3 +108,12 @@ config
 *.bak
 *.tmp
 *.swp
+
+# Extras ignorados localmente
+.venv/
+venv/
+*.tar.gz
+*.csv
+*.xlsx
+*.db
+

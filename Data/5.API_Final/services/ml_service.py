@@ -83,6 +83,32 @@ def get_embedding(text: str):
     
     return sentence_embeddings[0]
 
+def registrar_documento(doc_id: str, titulo: str, texto: str):
+    """
+    Registra dinámicamente un documento nuevo en el espacio vectorial en memoria
+    para que esté disponible inmediatamente en búsquedas y recomendaciones.
+    """
+    global dataset_ref, corpus_embeddings
+    if session is None or dataset_ref is None or corpus_embeddings is None:
+        return
+    
+    # Evitar duplicados
+    if (dataset_ref['doc_id'].astype(str) == str(doc_id)).any():
+        return
+        
+    try:
+        vector = get_embedding(texto)
+        nuevo_doc = pd.DataFrame([{
+            'doc_id': str(doc_id),
+            'titulo': str(titulo),
+            'source_type': 'Documento_Usuario',
+            'texto': str(texto)
+        }])
+        dataset_ref = pd.concat([dataset_ref, nuevo_doc], ignore_index=True)
+        corpus_embeddings = np.vstack([corpus_embeddings, vector.reshape(1, -1)])
+    except Exception as e:
+        print(f"Error al registrar documento vectorial: {e}")
+
 def buscar_similares(keywords: str, top_k: int = 5):
     """
     Busca los documentos más relevantes comparando el vector de la pregunta
@@ -125,6 +151,7 @@ def buscar_por_id(doc_id: str, top_k: int = 3):
     """
     Busca documentos similares a un documento existente dado su doc_id.
     Reutiliza el vector matemático pre-calculado, sin pasar por la red neuronal.
+    Si el doc_id no existe, retorna una lista vacía de forma elegante.
     """
     if session is None or corpus_embeddings is None or dataset_ref is None:
         return {"error": "El modelo ONNX, el dataset o los embeddings no están cargados."}
@@ -135,7 +162,8 @@ def buscar_por_id(doc_id: str, top_k: int = 3):
     # Encontrar el índice del documento
     coincidencias = dataset_ref.index[dataset_ref['doc_id'].astype(str) == str(doc_id)].tolist()
     if not coincidencias:
-        return {"error": "doc_id no encontrado"}
+        # Fallback elegante: si no se encuentra en el índice estático, retornar vacío sin error 500/404
+        return {"resultados": []}
         
     idx_referencia = coincidencias[0]
     vector_ref = corpus_embeddings[idx_referencia]

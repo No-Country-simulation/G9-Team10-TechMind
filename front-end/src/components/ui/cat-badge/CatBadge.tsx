@@ -1,4 +1,4 @@
-import { CategoryIcon } from '@/components/ui/category-icon/CategoryIcon';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CATEGORY_COLORS, THEME } from '@/utils/constants';
 import { accentColor } from '@/utils/cssVars';
 import './CatBadge.css';
