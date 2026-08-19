@@ -1,4 +1,4 @@
-package JMR.Hackathon.BackEnd.Documents.api;
+package JMR.Hackathon.BackEnd.Documents.infraestructure;
 
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.AiAnalysisResponse;
@@ -6,8 +6,6 @@ import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecomendacionResponse;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.RecommendRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.SearchRequest;
 import JMR.Hackathon.BackEnd.Documents.domain.exception.AiServiceException;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;

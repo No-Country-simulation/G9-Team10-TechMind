@@ -1,7 +1,7 @@
 package JMR.Hackathon.BackEnd.Documents.api.controller;
 
 
-import JMR.Hackathon.BackEnd.Documents.api.DocumentService;
+import JMR.Hackathon.BackEnd.Documents.domain.Service.DocumentService;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentRequest;
 import JMR.Hackathon.BackEnd.Documents.api.Dtos.DocumentResponse;
 import jakarta.validation.Valid;

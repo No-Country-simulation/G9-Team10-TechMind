@@ -1,6 +1,6 @@
 package JMR.Hackathon.BackEnd;
 
-import JMR.Hackathon.BackEnd.Documents.api.DocumentService;
+import JMR.Hackathon.BackEnd.Documents.domain.Service.DocumentService;
 import JMR.Hackathon.BackEnd.Keywords.api.KeywordService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
