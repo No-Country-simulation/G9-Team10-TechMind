@@ -19,6 +19,6 @@ Se desarrollo una arquitectura modular-hexagonal donde se evidencia una relació
 
 ##Modulo Documents:
 
-<img width="1220" height="1360" alt="DocumentsModulo excalidraw" src="https://github.com/user-attachments/assets/6387c14e-9b05-4a7a-89c5-813c97f09bb9" />
+<img width="400"  alt="DocumentsModulo excalidraw" src="https://github.com/user-attachments/assets/6387c14e-9b05-4a7a-89c5-813c97f09bb9" />
 
 
