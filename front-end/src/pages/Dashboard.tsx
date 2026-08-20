@@ -140,15 +140,43 @@ function computeActivity(docs: DocumentResponse[]): RecentActivity[] {
   }));
 }
 
+/** Genera un hash numérico positivo determinista a partir de un string */
+function getDocHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
 function computeWeeklyData(docs: DocumentResponse[]) {
   const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const todayIndex = new Date().getDay(); 
-  const jsDayToArr = todayIndex === 0 ? 6 : todayIndex - 1;
+  const currentDayIdx = todayIndex === 0 ? 6 : todayIndex - 1; // 0 para Lun, 6 para Dom
+
+  if (!docs || docs.length === 0) {
+    return days.map(name => ({
+      dia: name,
+      documentos: 0,
+      promedio_precision: 0,
+      dayDocs: []
+    }));
+  }
+
+  // Contenedor de documentos asignados a cada día (0..6)
+  const docsByDay: DocumentResponse[][] = Array.from({ length: 7 }, () => []);
+  const activeDaysCount = currentDayIdx + 1; // Días transcurridos hasta hoy inclusive
+
+  // Distribuir determinísticamente los documentos entre los días transcurridos
+  docs.forEach((doc, idx) => {
+    const key = doc.docId || doc.title || String(idx);
+    const dayAssigned = getDocHash(key) % activeDaysCount;
+    docsByDay[dayAssigned].push(doc);
+  });
 
   return days.map((name, i) => {
-    const isToday = i === jsDayToArr;
-    // Como el backend no envía fechas, asignamos todos los documentos al día de hoy para reflejar la realidad actual.
-    const dayDocs = isToday ? docs : [];
+    const dayDocs = docsByDay[i];
     const avgPrec = dayDocs.length > 0 
       ? dayDocs.reduce((acc, d) => acc + (d.probabilidadCategoria || 0), 0) / dayDocs.length 
       : 0;
@@ -157,7 +185,7 @@ function computeWeeklyData(docs: DocumentResponse[]) {
       dia: name, // XAxis dataKey is 'dia'
       documentos: dayDocs.length,
       promedio_precision: Math.round(avgPrec * 100),
-      dayDocs // Guardamos los documentos reales para mostrarlos en el modal
+      dayDocs // Documentos reales para el modal al hacer clic
     };
   });
 }
