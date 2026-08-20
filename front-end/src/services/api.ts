@@ -20,7 +20,7 @@ const CACHE_KEYS = {
 } as const;
 
 // En entorno local, las peticiones pasan por el proxy de Vite (/api -> http://localhost:8080)
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
 type RequestOptions = RequestInit & {
   params?: Record<string, string | number | boolean>;

@@ -275,3 +275,23 @@
 .scale-up {
   animation: scaleUp 0.2s ease-out;
 }
+
+@media (max-width: 768px) {
+  .doc-modal-container {
+    width: 95vw;
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+  .doc-modal-header,
+  .doc-modal-body,
+  .doc-modal-footer {
+    padding: 16px;
+  }
+  .doc-modal-meta-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .doc-modal-recs-grid {
+    grid-template-columns: 1fr;
+  }
+}
