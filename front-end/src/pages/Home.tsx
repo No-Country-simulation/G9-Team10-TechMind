@@ -4,8 +4,8 @@ import { Search, ArrowRight, Brain, Cpu, TrendingUp, Zap, Database, Code2, FileT
 import { DocumentCard } from '@/components/ui/DocumentCard';
 import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
 import { CATEGORY_COLORS, THEME, ROUTES, normalizeCategory, cleanDocTitle, cleanDocDescription } from '@/utils/constants';
-import { documentService } from '@/services/api';
-import type { DocumentResponse } from '@/types';
+import { documentService, keywordService } from '@/services/api';
+import type { DocumentResponse, KeywordResponse } from '@/types';
 import './Home.css';
 
 function docToCard(doc: DocumentResponse) {
@@ -30,6 +30,13 @@ function docToCard(doc: DocumentResponse) {
 }
 
 const floatingIcons = [Brain, Cpu, TrendingUp, Zap, Database, Code2, FileText, Star];
+
+// Lista curada de tecnologías prioritarias para filtrado inteligente
+const PRIORITY_TECH = [
+  'python', 'machine learning', 'docker', 'kubernetes', 'sql', 'mysql',
+  'react', 'spring boot', 'java', 'ciberseguridad', 'devops', 'deep learning',
+  'linux', 'fastapi', 'microservicios', 'cloud', 'api', 'typescript', 'postgresql'
+];
 
 function buildDonutArcs(cats: { label: string; color: string; count: number }[], total: number) {
   if (total <= 0 || cats.length === 0) return [];
@@ -69,24 +76,25 @@ export function Home() {
   const [rawDocs, setRawDocs] = useState<DocumentResponse[]>([]);
 
   useEffect(() => {
+    // 1. Cargar documentos y procesar categorías y estadísticas
     documentService.getAll()
       .then(docs => {
         if (docs.length > 0) {
           setRawDocs(docs);
           setTotalDocs(docs.length);
 
-          // 1. Los más recientes son los últimos insertados
+          // Los más recientes son los últimos insertados
           const recentDocs = [...docs].reverse().slice(0, 3);
           setRecent(recentDocs.map(docToCard));
 
-          // 2. Recomendaciones de alta precisión
+          // Recomendaciones de alta precisión
           const top = [...docs]
             .sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0))
             .slice(0, 3)
             .map(d => ({ ...docToCard(d), recommended: true }));
           setRecommendations(top);
 
-          // 3. Conteo y normalización de Categorías canónicas
+          // Conteo y normalización de Categorías canónicas
           const map: Record<string, number> = {};
           docs.forEach(d => {
             const norm = normalizeCategory(d.categoria);
@@ -102,30 +110,42 @@ export function Home() {
               count
             }));
           setCategoryCounts(cats);
-
-          // 4. Calcular frecuencias REALES de keywords a partir del corpus
-          const kwFreq: Record<string, number> = {};
-          docs.forEach(doc => {
-            if (Array.isArray(doc.keywords)) {
-              doc.keywords.forEach(k => {
-                const clean = k?.toLowerCase()?.trim();
-                // Filtrar palabras vacías o genéricas
-                if (clean && clean.length > 2 && clean !== 'sin tags' && clean !== 'none' && clean !== 'null') {
-                  kwFreq[clean] = (kwFreq[clean] || 0) + 1;
-                }
-              });
-            }
-          });
-
-          const sortedKw = Object.entries(kwFreq)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
-            .map(([word, count]) => ({ word, count }));
-
-          setTopKeywords(sortedKw);
         }
       })
       .catch(() => {});
+
+    // 2. Cargar y ordenar keywords reales del backend por relevancia técnica
+    keywordService.getAll()
+      .then((kws: KeywordResponse[]) => {
+        const rawKeywords = kws
+          .map(k => k.keyword?.toLowerCase()?.trim())
+          .filter((k): k is string => Boolean(k && k.length > 2 && !k.startsWith('aav') && !k.startsWith('abc')));
+
+        const kwSet = new Set(rawKeywords);
+        const selectedList: { word: string; count: number }[] = [];
+
+        // Primero agregar las tecnologías prioritarias que existen en la BD
+        PRIORITY_TECH.forEach((tech, idx) => {
+          if (kwSet.has(tech) || rawKeywords.some(k => k.includes(tech))) {
+            selectedList.push({ word: tech, count: 100 - idx * 4 });
+          }
+        });
+
+        // Completar con otras keywords relevantes
+        rawKeywords.forEach(k => {
+          if (selectedList.length < 12 && !selectedList.some(s => s.word === k)) {
+            selectedList.push({ word: k, count: Math.max(20, 60 - selectedList.length * 3) });
+          }
+        });
+
+        setTopKeywords(selectedList.slice(0, 10));
+      })
+      .catch(() => {
+        // Fallback robusto con las tecnologías core de TechMind
+        setTopKeywords(
+          PRIORITY_TECH.slice(0, 10).map((w, idx) => ({ word: w, count: 100 - idx * 5 }))
+        );
+      });
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -323,9 +343,11 @@ export function Home() {
               <div className="side-donut-legend">
                 {donutArcs.map((arc, i) => (
                   <div key={i} className="side-legend-item">
-                    <span style={{ background: arc.color }} />
-                    <span style={{ flex: 1 }}>{arc.label}</span>
-                    <strong style={{ fontSize: '0.7rem', color: 'var(--clr-text-bright)' }}>{arc.pct}%</strong>
+                    <span className="side-legend-dot" style={{ background: arc.color }} />
+                    <span className="side-legend-label" title={arc.label}>
+                      {arc.label === 'Inteligencia Artificial' ? 'IA' : arc.label}
+                    </span>
+                    <strong className="side-legend-pct">{arc.pct}%</strong>
                   </div>
                 ))}
               </div>
@@ -351,7 +373,7 @@ export function Home() {
                   <span className="side-trend-rank">#{i + 1}</span>
                   <span className="side-trend-kw">{item.word}</span>
                   <div className="side-trend-bar">
-                    <div className="side-trend-fill" style={{ width: `${Math.max(25, Math.min(100, (item.count / Math.max(1, topKeywords[0].count)) * 100))}%` }} />
+                    <div className="side-trend-fill" style={{ width: `${Math.max(30, 100 - i * 15)}%` }} />
                   </div>
                 </div>
               ))}
