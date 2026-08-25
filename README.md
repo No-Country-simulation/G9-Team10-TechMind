@@ -39,6 +39,20 @@ BENCHMARK PERFORMANCE METRICS (VERIFIED IN OCI PRODUCTION):
 
 <br/>
 
+<!-- ======================= LIVE PRODUCTION BANNER ======================= -->
+### ⚡ ACCESO RÁPIDO A PRODUCCIÓN (EN VIVO)
+
+[![🚀 PROBAR APLICACIÓN WEB](https://img.shields.io/badge/🚀_PROBAR_APLICACIÓN_EN_VIVO-https%3A%2F%2Fg9--team10--tech--mind.vercel.app-00FF99?style=for-the-badge&logo=vercel&logoColor=black&labelColor=000000)](https://g9-team10-tech-mind.vercel.app)
+[![☁️ BACKEND API OCI](https://img.shields.io/badge/☁️_API_GATEWAY_OCI-https%3A%2F%2F144--33--15--98.nip.io-66FCF1?style=for-the-badge&logo=oracle&logoColor=black&labelColor=000000)](https://144-33-15-98.nip.io/document/all)
+[![🔐 SSL STATUS](https://img.shields.io/badge/SSL%2FTLS-HTTPS_SEGURO-brightgreen?style=for-the-badge&logo=letsencrypt&logoColor=white&labelColor=000000)](https://144-33-15-98.nip.io/document/all)
+
+> 🌐 **URL de Producción:** **[https://g9-team10-tech-mind.vercel.app](https://g9-team10-tech-mind.vercel.app)**  
+> *(100% operativo: Búsqueda Semántica Vectorial ONNX + Ingesta con Groq IA + Backend en Oracle Cloud)*
+
+<!-- ====================================================================== -->
+
+<br/>
+
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                    PILIFICACIÓN ARQUITECTÓNICA CORE                                   ║
@@ -318,11 +332,26 @@ El repositorio incluye el archivo [`articulos_academicos_prueba.md`](./articulos
 
 | Recurso OCI | Rol en la Arquitectura |
 |---|---|
-| **OCI Compute (VM Ubuntu)** | Hospedaje en contenedores Docker de Spring Boot (Gateway) y FastAPI (Motor IA). |
-| **OCI Object Storage** | Almacenamiento y versionado de modelos cuantizados `.onnx` y matrices de embeddings. |
-| **OCI MySQL Database Service / Autonomous DB** | Base de datos relacional administrada de alta disponibilidad para persistencia. |
-| **OCI Load Balancer / NGINX Ingress** | Terminación SSL/TLS, enrutamiento seguro y balanceo de carga. |
+| **OCI Compute (VM Ubuntu Pública)** | NGINX Reverse Proxy + SSL Let's Encrypt + Spring Boot Gateway (`144.33.15.98`). |
+| **OCI Compute (VM Ubuntu Privada)** | Motor de Inferencia IA FastAPI (`10.0.1.231`) con ONNX Runtime INT8 y Groq LPU. |
+| **OCI Compute (VM Ubuntu Privada)** | Base de datos relacional MySQL 8 con persistencia transaccional ACID. |
+| **OCI Virtual Cloud Network (VCN)** | Aislamiento por subredes públicas y privadas con Security Lists restrictivas. |
+| **Vercel Edge Network** | Distribución global de frontend SPA React 19 con latencia ultra-baja. |
 
 ---
 
-*Proyecto desarrollado para la Hackathon ONE G9 LATAM.*
+## 🌐 Enlaces Oficiales del Ecosistema en Producción
+
+| Servicio | Entorno | Enlace de Acceso Directo |
+|---|---|---|
+| 🖥️ **Frontend Web App** | Vercel Edge Global | **[https://g9-team10-tech-mind.vercel.app](https://g9-team10-tech-mind.vercel.app)** |
+| ☕ **Backend Gateway API** | OCI Subred Pública | **[https://144-33-15-98.nip.io/document/all](https://144-33-15-98.nip.io/document/all)** |
+| 📑 **Documentación OpenAPI** | FastAPI en OCI | **[https://144-33-15-98.nip.io/docs](https://144-33-15-98.nip.io/docs)** |
+| 📂 **Repositorio GitHub** | Team 10 | **[No-Country-simulation/G9-Team10-TechMind](https://github.com/No-Country-simulation/G9-Team10-TechMind)** |
+
+---
+
+<div align="center">
+  <sub>Proyecto desarrollado con orgullo por el <b>Team 10</b> para la <b>Hackathon ONE G9 LATAM</b></sub><br/>
+  <sub><b>Alura Latam • Oracle Next Education (ONE)</b> — 2026</sub>
+</div>
