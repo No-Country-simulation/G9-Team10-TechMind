@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Sparkles, Compass, Search, RefreshCw, Layers, BookOpen } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
 import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
+import { normalizeCategory, cleanDocTitle, cleanDocDescription } from '@/utils/constants';
 import { documentService } from '@/services/api';
 import type { DocumentResponse } from '@/types';
 import './Recommendations.css';
@@ -68,135 +69,152 @@ export function Recommendations() {
       if (recList.length < 4) {
         const baseDoc = corpus.find(d => String(d.docId) === String(docId));
         if (baseDoc) {
-          const sameCategory = corpus.filter(d =>
-            String(d.docId) !== String(docId) &&
-            d.categoria === baseDoc.categoria &&
-            !recList.some(r => r.title === d.title)
-          );
-          recList.push(...sameCategory.slice(0, 6 - recList.length));
+          const sameCategory = corpus
+            .filter(d => d.docId !== docId && normalizeCategory(d.categoria) === normalizeCategory(baseDoc.categoria))
+            .slice(0, 6 - recList.length);
+          recList.push(...sameCategory);
         }
       }
 
       setRecommendations(recList);
     } catch {
-      // Fallback a documentos similares por categoría
+      // Fallback semántico local
       const baseDoc = corpus.find(d => String(d.docId) === String(docId));
       if (baseDoc) {
-        const related = corpus
-          .filter(d => String(d.docId) !== String(docId))
-          .sort((a, b) => {
-            if (a.categoria === baseDoc.categoria && b.categoria !== baseDoc.categoria) return -1;
-            if (b.categoria === baseDoc.categoria && a.categoria !== baseDoc.categoria) return 1;
-            return (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0);
-          })
+        const sameCategory = corpus
+          .filter(d => d.docId !== docId && normalizeCategory(d.categoria) === normalizeCategory(baseDoc.categoria))
           .slice(0, 6);
-        setRecommendations(related);
+        setRecommendations(sameCategory);
       }
     } finally {
       setRecsLoading(false);
     }
   };
 
-  // Búsqueda de recomendaciones por tema personalizado
+  // Manejar cambio de documento base en el selector
+  const handleSelectBaseDoc = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const docId = e.target.value;
+    setSelectedBaseDocId(docId);
+    setCustomQuery('');
+    loadRecommendationsForDoc(docId);
+  };
+
+  // Buscar recomendaciones por query libre
   const handleCustomSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const q = customQuery.trim();
-    if (!q) return;
+    if (!customQuery.trim()) return;
 
     setRecsLoading(true);
     try {
-      const searchResults = await documentService.search(q, 8);
-      if (searchResults && searchResults.length > 0) {
-        setRecommendations(searchResults);
-      } else {
-        // Fallback local por coincidencia de texto
-        const qLower = q.toLowerCase();
-        const matches = allDocs.filter(d =>
-          d.title.toLowerCase().includes(qLower) ||
-          d.content.toLowerCase().includes(qLower) ||
-          (d.categoria && d.categoria.toLowerCase().includes(qLower)) ||
-          (d.keywords && d.keywords.some(k => k.toLowerCase().includes(qLower)))
-        );
-        setRecommendations(matches.slice(0, 8));
+      const res = await documentService.semanticSearch(customQuery.trim(), 8);
+      const recList: DocumentResponse[] = [];
+
+      if (res && res.resultados && res.resultados.length > 0) {
+        res.resultados.forEach(r => {
+          const match = allDocs.find(d => String(d.docId) === String(r.doc_id) || d.title === r.title);
+          if (match) {
+            recList.push({
+              ...match,
+              probabilidadCategoria: r.similarity_score || match.probabilidadCategoria
+            });
+          } else {
+            recList.push({
+              docId: r.doc_id || '',
+              title: r.title,
+              content: r.preview || '',
+              categoria: 'Recomendado IA',
+              probabilidadCategoria: r.similarity_score || 0.95,
+              keywords: []
+            });
+          }
+        });
       }
+      setRecommendations(recList);
     } catch {
-      const qLower = q.toLowerCase();
-      const matches = allDocs.filter(d =>
-        d.title.toLowerCase().includes(qLower) ||
-        d.content.toLowerCase().includes(qLower) ||
-        (d.categoria && d.categoria.toLowerCase().includes(qLower))
-      );
-      setRecommendations(matches.slice(0, 8));
+      const q = customQuery.toLowerCase();
+      const filtered = allDocs.filter(d =>
+        d.title?.toLowerCase().includes(q) ||
+        d.content?.toLowerCase().includes(q) ||
+        d.categoria?.toLowerCase().includes(q)
+      ).slice(0, 6);
+      setRecommendations(filtered);
     } finally {
       setRecsLoading(false);
     }
   };
 
-  // Categorías presentes en los documentos
+  // Documentos recomendados destacados por categorías
   const availableCategories = useMemo(() => {
-    const cats = new Set<string>();
+    const set = new Set<string>();
     allDocs.forEach(d => {
-      if (d.categoria && d.categoria.trim()) cats.add(d.categoria.trim());
+      if (d.categoria) set.add(normalizeCategory(d.categoria));
     });
-    return ['Todas', ...Array.from(cats).sort()];
+    return ['Todas', ...Array.from(set).sort()];
   }, [allDocs]);
 
-  // Documentos destacados de alta certeza
   const topFeaturedDocs = useMemo(() => {
-    let list = [...allDocs].sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0));
+    let list = [...allDocs];
     if (activeCategoryFilter !== 'Todas') {
-      list = list.filter(d => (d.categoria || 'General') === activeCategoryFilter);
+      list = list.filter(d => normalizeCategory(d.categoria) === activeCategoryFilter);
     }
-    return list.slice(0, 8);
+    // Ordenar por mayor probabilidad de categoría
+    return list
+      .sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0))
+      .slice(0, 6);
   }, [allDocs, activeCategoryFilter]);
 
-  const baseDoc = allDocs.find(d => String(d.docId) === String(selectedBaseDocId));
+  const baseDoc = allDocs.find(d => d.docId === selectedBaseDocId);
 
   return (
     <main className="rec-page">
-      <header className="rec-header fade-up">
-        <div className="rec-header-icon">
-          <Sparkles size={26} />
+      {/* ── HEADER ── */}
+      <section className="rec-hero fade-up">
+        <div className="rec-badge">
+          <Sparkles size={13} />
+          Motor de Similitud Vectorial
         </div>
-        <div>
-          <h1 className="page-title">Motor de Recomendaciones IA</h1>
-          <p className="page-description">
-            Explora afinidades semánticas, descubre conexiones interdisciplinarias y navega artículos relacionados calculados por el modelo de IA.
-          </p>
-        </div>
-      </header>
+        <h1 className="rec-title">Recomendaciones Inteligentes</h1>
+        <p className="rec-subtitle">
+          Descubre artículos y recursos técnicos con alta afinidad matemática y conceptual.
+        </p>
+      </section>
 
-      {/* ── SECCIÓN 1: EXPLORADOR DE AFINIDADES SEMÁNTICAS ── */}
-      <section className="rec-explorer-card fade-up">
-        <div className="rec-explorer-header">
-          <div className="rec-explorer-title">
+      {/* ── SECCIÓN 1: GENERADOR INTERACTIVO ── */}
+      <section className="rec-generator-card fade-up" style={{ animationDelay: '0.08s' }}>
+        <div className="rec-generator-header">
+          <div className="rec-generator-title">
             <Compass size={18} style={{ color: 'var(--clr-primary)' }} />
-            <span>Generador de Recomendaciones por Afinidad</span>
+            Generador de Afinidad
           </div>
-          <span className="rec-explorer-tag">IA Semántica</span>
+          <span className="rec-generator-hint">
+            Selecciona un documento de referencia o escribe un concepto libre
+          </span>
         </div>
 
-        <div className="rec-explorer-controls">
-          {/* Selector de documento base */}
+        <div className="rec-generator-controls">
+          {/* Selector de Documento Base */}
           <div className="rec-select-group">
-            <label className="rec-label">
-              <BookOpen size={13} /> Selecciona un documento de referencia:
+            <label htmlFor="base-doc-select" className="rec-label">
+              <BookOpen size={13} /> Basado en un documento del catálogo:
             </label>
             <select
+              id="base-doc-select"
               value={selectedBaseDocId}
-              onChange={e => {
-                const id = e.target.value;
-                setSelectedBaseDocId(id);
-                setCustomQuery('');
-                loadRecommendationsForDoc(id);
-              }}
+              onChange={handleSelectBaseDoc}
               className="rec-select"
+              disabled={loading || allDocs.length === 0}
             >
-              {allDocs.map(d => (
-                <option key={d.docId || d.title} value={d.docId}>
-                  {d.title} ({d.categoria || 'General'})
-                </option>
-              ))}
+              {loading ? (
+                <option>Cargando catálogo de documentos…</option>
+              ) : allDocs.length === 0 ? (
+                <option>No hay documentos disponibles</option>
+              ) : (
+                allDocs.map(d => (
+                  <option key={d.docId} value={d.docId}>
+                    [{normalizeCategory(d.categoria)}] {cleanDocTitle(d.title).slice(0, 65)}…
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -208,7 +226,7 @@ export function Recommendations() {
             <div className="rec-query-input-wrap">
               <input
                 type="text"
-                placeholder="Ej. 'Criptografía', 'CAR-T', 'Micro-redes', 'Modelos de Lenguaje'…"
+                placeholder="Ej. 'Criptografía', 'Kubernetes', 'Bases de Datos', 'Modelos de Lenguaje'…"
                 value={customQuery}
                 onChange={e => setCustomQuery(e.target.value)}
                 className="rec-query-input"
@@ -227,7 +245,7 @@ export function Recommendations() {
               {customQuery.trim()
                 ? `Artículos recomendados para el tema "${customQuery.trim()}":`
                 : baseDoc
-                ? `Artículos afines a "${baseDoc.title}":`
+                ? `Artículos afines a "${cleanDocTitle(baseDoc.title)}":`
                 : 'Artículos recomendados:'}
             </span>
             {recsLoading && <RefreshCw size={14} className="spin" style={{ color: 'var(--clr-primary)' }} />}
@@ -248,12 +266,13 @@ export function Recommendations() {
                 <DocumentCard
                   key={doc.docId || doc.title}
                   id={doc.docId}
-                  title={doc.title}
-                  description={doc.content?.slice(0, 130) + (doc.content?.length > 130 ? '…' : '') || 'Sin descripción.'}
-                  category={doc.categoria || 'General'}
-                  tags={doc.keywords?.slice(0, 3) ?? []}
+                  title={cleanDocTitle(doc.title)}
+                  description={cleanDocDescription(doc.content, 130) || 'Sin descripción.'}
+                  category={normalizeCategory(doc.categoria)}
+                  tags={(doc.keywords ?? []).map(k => k?.trim()).filter(k => k && k.length > 1 && k.toLowerCase() !== 'sin tags').slice(0, 3)}
                   similarity={Math.round((doc.probabilidadCategoria ?? 0.90) * 100)}
                   recommended={true}
+                  showSimilarity={true}
                   onClick={() => setSelectedDoc(doc)}
                 />
               ))}
@@ -300,12 +319,13 @@ export function Recommendations() {
               <DocumentCard
                 key={doc.docId || doc.title}
                 id={doc.docId}
-                title={doc.title}
-                description={doc.content?.slice(0, 130) + (doc.content?.length > 130 ? '…' : '') || 'Sin descripción.'}
-                category={doc.categoria || 'General'}
-                tags={doc.keywords?.slice(0, 3) ?? []}
+                title={cleanDocTitle(doc.title)}
+                description={cleanDocDescription(doc.content, 130) || 'Sin descripción.'}
+                category={normalizeCategory(doc.categoria)}
+                tags={(doc.keywords ?? []).map(k => k?.trim()).filter(k => k && k.length > 1 && k.toLowerCase() !== 'sin tags').slice(0, 3)}
                 similarity={Math.round((doc.probabilidadCategoria ?? 0.95) * 100)}
                 recommended={true}
+                showSimilarity={true}
                 onClick={() => setSelectedDoc(doc)}
               />
             ))}

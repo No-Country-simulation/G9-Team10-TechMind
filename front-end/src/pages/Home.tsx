@@ -3,30 +3,51 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowRight, Brain, Cpu, TrendingUp, Zap, Database, Code2, FileText, Star, Key, Folder } from 'lucide-react';
 import { DocumentCard } from '@/components/ui/DocumentCard';
 import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
-import { CATEGORY_COLORS, THEME, ROUTES } from '@/utils/constants';
-import { documentService, keywordService } from '@/services/api';
-import type { DocumentResponse, KeywordResponse } from '@/types';
+import { CATEGORY_COLORS, THEME, ROUTES, normalizeCategory, cleanDocTitle, cleanDocDescription } from '@/utils/constants';
+import { documentService } from '@/services/api';
+import type { DocumentResponse } from '@/types';
 import './Home.css';
 
 function docToCard(doc: DocumentResponse) {
+  const normCategory = normalizeCategory(doc.categoria);
+  const cleanTitle = cleanDocTitle(doc.title);
+  const cleanDesc = cleanDocDescription(doc.content, 120);
+
+  // Limpiar tags
+  const cleanTags = (doc.keywords ?? [])
+    .map(k => k?.trim())
+    .filter(k => k && k.length > 1 && k.toLowerCase() !== 'sin tags')
+    .slice(0, 2);
+
   return {
     id: doc.docId,
-    title: doc.title,
-    description: doc.content?.slice(0, 120) + (doc.content?.length > 120 ? '…' : ''),
-    category: doc.categoria,
-    tags: doc.keywords?.slice(0, 2) ?? [],
-    similarity: Math.round(doc.probabilidadCategoria * 100),
+    title: cleanTitle,
+    description: cleanDesc,
+    category: normCategory,
+    tags: cleanTags,
+    similarity: Math.round((doc.probabilidadCategoria || 0.88) * 100),
   };
 }
 
 const floatingIcons = [Brain, Cpu, TrendingUp, Zap, Database, Code2, FileText, Star];
 
 function buildDonutArcs(cats: { label: string; color: string; count: number }[], total: number) {
-  const top3 = cats.slice(0, 3);
+  if (total <= 0 || cats.length === 0) return [];
+
+  // Tomar las top 4 categorías principales y agrupar el resto en "Otras"
+  const topCategories = cats.slice(0, 4);
+  const topCount = topCategories.reduce((sum, c) => sum + c.count, 0);
+  const otherCount = total - topCount;
+
+  const allSlices = [...topCategories];
+  if (otherCount > 0) {
+    allSlices.push({ label: 'Otras', color: '#64748B', count: otherCount });
+  }
+
   const circumference = 2 * Math.PI * 38;
-  let offset = -10;
-  return top3.map(cat => {
-    const pct = total > 0 ? cat.count / total : 0;
+  let offset = 0;
+  return allSlices.map(cat => {
+    const pct = cat.count / total;
     const dash = pct * circumference;
     const gap = circumference - dash;
     const arc = { color: cat.color, dash, gap, offset, label: cat.label, pct: Math.round(pct * 100) };
@@ -43,7 +64,7 @@ export function Home() {
   const [categoryCounts, setCategoryCounts] = useState<{ id: string; label: string; color: string; count: number }[]>([]);
   const [totalDocs, setTotalDocs] = useState(0);
   const [catFilter, setCatFilter] = useState('');
-  const [topKeywords, setTopKeywords] = useState<string[]>([]);
+  const [topKeywords, setTopKeywords] = useState<{ word: string; count: number }[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<DocumentResponse | null>(null);
   const [rawDocs, setRawDocs] = useState<DocumentResponse[]>([]);
 
@@ -53,45 +74,63 @@ export function Home() {
         if (docs.length > 0) {
           setRawDocs(docs);
           setTotalDocs(docs.length);
-          // Los más recientes son los últimos insertados en la base de datos
+
+          // 1. Los más recientes son los últimos insertados
           const recentDocs = [...docs].reverse().slice(0, 3);
           setRecent(recentDocs.map(docToCard));
-          
-          // Las recomendaciones son las de mayor precisión (o puedes mezclar aleatoriamente las top)
+
+          // 2. Recomendaciones de alta precisión
           const top = [...docs]
-            .sort((a, b) => b.probabilidadCategoria - a.probabilidadCategoria)
+            .sort((a, b) => (b.probabilidadCategoria || 0) - (a.probabilidadCategoria || 0))
             .slice(0, 3)
             .map(d => ({ ...docToCard(d), recommended: true }));
           setRecommendations(top);
 
+          // 3. Conteo y normalización de Categorías canónicas
           const map: Record<string, number> = {};
-          docs.forEach(d => { if (d.categoria) map[d.categoria] = (map[d.categoria] || 0) + 1; });
+          docs.forEach(d => {
+            const norm = normalizeCategory(d.categoria);
+            map[norm] = (map[norm] || 0) + 1;
+          });
+
           const cats = Object.entries(map)
             .sort((a, b) => b[1] - a[1])
-            .map(([id, count]) => ({ id, label: id, color: CATEGORY_COLORS[id] ?? THEME.primary, count }));
+            .map(([id, count]) => ({
+              id,
+              label: id,
+              color: CATEGORY_COLORS[id] ?? THEME.primary,
+              count
+            }));
           setCategoryCounts(cats);
+
+          // 4. Calcular frecuencias REALES de keywords a partir del corpus
+          const kwFreq: Record<string, number> = {};
+          docs.forEach(doc => {
+            if (Array.isArray(doc.keywords)) {
+              doc.keywords.forEach(k => {
+                const clean = k?.toLowerCase()?.trim();
+                // Filtrar palabras vacías o genéricas
+                if (clean && clean.length > 2 && clean !== 'sin tags' && clean !== 'none' && clean !== 'null') {
+                  kwFreq[clean] = (kwFreq[clean] || 0) + 1;
+                }
+              });
+            }
+          });
+
+          const sortedKw = Object.entries(kwFreq)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([word, count]) => ({ word, count }));
+
+          setTopKeywords(sortedKw);
         }
       })
       .catch(() => {});
-
-    keywordService.getAll()
-      .then((kws: KeywordResponse[]) => {
-        const freq: Record<string, number> = {};
-        kws.forEach(k => {
-          const word = k.keyword?.toLowerCase()?.trim();
-          if (word) freq[word] = (freq[word] || 0) + 1;
-        });
-        const sorted = Object.entries(freq)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 10)
-          .map(([w]) => w);
-        setTopKeywords(sorted);
-      })
-      .catch(() => setTopKeywords([]));
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!query.trim()) return;
     navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(query.trim())}`);
   };
 
@@ -134,7 +173,7 @@ export function Home() {
           </span>
         </div>
 
-        {categoryCounts.length > 8 && (
+        {categoryCounts.length > 6 && (
           <div className="side-cat-search">
             <input
               type="text"
@@ -164,7 +203,7 @@ export function Home() {
           )}
         </div>
 
-        {/* Keywords reales del backend */}
+        {/* Keywords reales más populares del corpus */}
         {topKeywords.length > 0 && (
           <>
             <div className="side-section-title" style={{ marginTop: 14 }}>
@@ -172,9 +211,13 @@ export function Home() {
               Keywords populares
             </div>
             <div className="side-keywords">
-              {topKeywords.map(kw => (
-                <button key={kw} className="side-kw-tag" onClick={() => navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(kw)}`)}>
-                  #{kw}
+              {topKeywords.map(item => (
+                <button
+                  key={item.word}
+                  className="side-kw-tag"
+                  onClick={() => navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(item.word)}`)}
+                >
+                  #{item.word}
                 </button>
               ))}
             </div>
@@ -213,6 +256,7 @@ export function Home() {
                 <DocumentCard
                   key={i}
                   {...doc}
+                  showSimilarity={false}
                   onClick={() => {
                     const found = rawDocs.find(d => d.docId === doc.id || d.title === doc.title);
                     if (found) setSelectedDoc(found);
@@ -234,6 +278,7 @@ export function Home() {
                   key={i}
                   {...doc}
                   recommended
+                  showSimilarity={true}
                   onClick={() => {
                     const found = rawDocs.find(d => d.docId === doc.id || d.title === doc.title);
                     if (found) setSelectedDoc(found);
@@ -255,7 +300,7 @@ export function Home() {
         />
       )}
 
-      {/* ── Panel lateral derecho ── */}
+      {/* ── Panel lateral derecho: Gráfico Donut y Tendencias ── */}
       <aside className="home-side home-side-right">
         <div className="side-section-title">Distribución por Categoría</div>
         <div className="side-donut-container">
@@ -296,12 +341,17 @@ export function Home() {
           <>
             <div className="side-section-title" style={{ marginTop: 12 }}>Tendencias de Keywords</div>
             <div className="side-trends">
-              {topKeywords.slice(0, 5).map((kw, i) => (
-                <div key={kw} className="side-trend-item">
+              {topKeywords.slice(0, 5).map((item, i) => (
+                <div
+                  key={item.word}
+                  className="side-trend-item"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(item.word)}`)}
+                >
                   <span className="side-trend-rank">#{i + 1}</span>
-                  <span className="side-trend-kw">{kw}</span>
+                  <span className="side-trend-kw">{item.word}</span>
                   <div className="side-trend-bar">
-                    <div className="side-trend-fill" style={{ width: `${100 - i * 15}%` }} />
+                    <div className="side-trend-fill" style={{ width: `${Math.max(25, Math.min(100, (item.count / Math.max(1, topKeywords[0].count)) * 100))}%` }} />
                   </div>
                 </div>
               ))}

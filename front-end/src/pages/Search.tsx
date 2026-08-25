@@ -5,7 +5,7 @@ import { DocumentCard } from '@/components/ui/DocumentCard';
 import { DocumentDetailModal } from '@/components/ui/DocumentDetailModal';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Pagination } from '@/components/ui/Pagination';
-import { CATEGORY_COLORS, ROUTES, THEME } from '@/utils/constants';
+import { CATEGORY_COLORS, ROUTES, THEME, normalizeCategory, cleanDocTitle, cleanDocDescription } from '@/utils/constants';
 import { documentService } from '@/services/api';
 import { useSettings } from '@/context/SettingsContext';
 import type { DocumentResponse, DocumentoSimilitudResponse } from '@/types';
@@ -20,12 +20,15 @@ type SearchMode = 'all' | 'keyword' | 'title';
 function docToResult(doc: DocumentResponse) {
   return {
     id: doc.docId,
-    title: doc.title,
-    description: doc.content?.slice(0, 140) + (doc.content?.length > 140 ? '…' : ''),
-    category: doc.categoria && doc.categoria.trim() !== '' ? doc.categoria : 'General',
-    tags: doc.keywords?.slice(0, 3) ?? [],
-    similarity: Math.round(doc.probabilidadCategoria * 100),
-    recommended: doc.probabilidadCategoria >= 0.88,
+    title: cleanDocTitle(doc.title),
+    description: cleanDocDescription(doc.content, 140),
+    category: normalizeCategory(doc.categoria),
+    tags: (doc.keywords ?? [])
+      .map(k => k?.trim())
+      .filter(k => k && k.length > 1 && k.toLowerCase() !== 'sin tags')
+      .slice(0, 3),
+    similarity: Math.round((doc.probabilidadCategoria || 0.85) * 100),
+    recommended: (doc.probabilidadCategoria || 0) >= 0.88,
   };
 }
 
@@ -152,7 +155,7 @@ export function SearchPage() {
   const categoryStats = useMemo(() => {
     const stats: Record<string, number> = {};
     allDocs.forEach(d => {
-      const cat = d.categoria && d.categoria.trim() !== '' ? d.categoria : 'General';
+      const cat = normalizeCategory(d.categoria);
       stats[cat] = (stats[cat] || 0) + 1;
     });
     Object.keys(CATEGORY_COLORS).forEach(c => {
