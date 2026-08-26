@@ -134,6 +134,29 @@ graph TD
 
 ---
 
+## 📁 Estructura del Repositorio
+
+```text
+TechMind/
+├── back-end/                # ☕ Gateway Spring Boot 3 + Java 17 (Orquestación ACID)
+│   ├── src/main/java/       # Controladores, Servicios, DTOs y Repositorios JPA
+│   └── src/main/resources/  # Migraciones Flyway (db/migration) y configuración MySQL
+├── front-end/               # 🎨 SPA React 19 + TypeScript + Vite (Vercel Edge CDN)
+│   ├── src/components/      # Componentes modulares, Modales y Gráficos SVG
+│   ├── src/views/           # Vistas (Inicio, Búsqueda, Biblioteca, Analizar, Dashboard)
+│   └── public/              # Assets visuales y temas en Modo Oscuro
+├── Data/                    # 🧠 Ecosistema de Ciencia de Datos & Motor de IA
+│   ├── 1.Analisis_inicial/  # Exploración de datos y análisis exploratorio (EDA)
+│   ├── 2.Limpieza/          # Pipeline de sanitización y curaduría del corpus (+1.050 docs)
+│   ├── 4.Modelado/          # Exportación y cuantización de modelos ONNX INT8 (384-D)
+│   └── 5.API_Final/         # Microservicio FastAPI (Groq LPU, ONNX Runtime y Fallback)
+└── Presentacion/            # 📚 Suite de Documentación (16 PDFs y Análisis de Competencia)
+    ├── md/                  # Documentos teóricos y estratégicos en Markdown
+    └── pdf/                 # PDFs vectoriales compilados para Gemini / NotebookLM
+```
+
+---
+
 ## 📦 Preparación de Modelos de Inteligencia Artificial (ONNX & Embeddings)
 
 > [!IMPORTANT]
