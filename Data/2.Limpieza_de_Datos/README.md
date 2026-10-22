@@ -203,6 +203,12 @@ Data Team: Nairobi Betancourt, Rodrigo Muñoz and Maximiliano Rodriguez.
 
 Hackathon ONE G9 | Oracle Next Education + Alura Latam
 
+👤 Autor
+Nairobi Betancourt
+Data Science | Oracle ONE Alura | Agosto 2026
+
+
+
 > **Proyecto:** TechMind – Organización Inteligente del Conocimiento Técnico  
 > **Hackathon ONE G9 | Oracle Next Education + Alura Latam**
 > 
