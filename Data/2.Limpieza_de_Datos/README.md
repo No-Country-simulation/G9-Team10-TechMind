@@ -10,11 +10,6 @@ The platform is designed to organize technical content and support knowledge ret
 
 This directory documents the data preparation stage. It focuses on transforming raw technical documents into a structured, validated dataset for downstream embedding generation.
 
-### Data Team
-
-- Nairobi Betancourt
-- Rodrigo Muñoz
-- Maximiliano Rodriguez
 
 ## 🎯 Phase Objective
 
